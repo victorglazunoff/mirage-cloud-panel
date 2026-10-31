@@ -1,0 +1,1073 @@
+/*
+ * Главный экран «Кабины» — раскладка DarkMain (1440) и DarkPhoneMain (390).
+ * Примитивы (табло, линейки, приборы, кнопки, статусы) — в src/modules/kabina;
+ * здесь только размеры и сетка блоков главного, значения — из макетов.
+ */
+
+.mh-home {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}
+
+.mh-home[data-phone] {
+  gap: 28px;
+}
+
+/* ---------------------------------------------------------------- сводка */
+
+.mh-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px 40px;
+}
+
+.mh-summary-text {
+  flex: 1 1 420px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mh-eyebrow {
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.22em;
+  color: var(--kb-mute);
+}
+
+.mh-h1 {
+  margin: 0;
+  font-size: clamp(32px, 3.8vw, 50px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+}
+
+.mh-lead {
+  margin: 0;
+  max-width: 54ch;
+  /* Two lines are reserved, so a short report does not drop the greeting below DarkMain's line. */
+  min-height: 3.1em;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+}
+
+.mh-lead-num {
+  font-size: 13px;
+  color: var(--kb-text);
+}
+
+.mh-board {
+  flex: 1 1 520px;
+  min-width: 0;
+}
+
+.mh-home[data-phone] .mh-summary {
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  gap: 14px;
+}
+
+.mh-home[data-phone] .mh-summary-text {
+  flex: none;
+  gap: 8px;
+}
+
+.mh-home[data-phone] .mh-h1 {
+  font-size: 30px;
+  line-height: 1.05;
+}
+
+.mh-home[data-phone] .mh-lead {
+  max-width: none;
+  min-height: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.mh-home[data-phone] .mh-board {
+  flex: none;
+}
+
+.mh-search {
+  box-sizing: border-box;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--kb-input);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 6px;
+  color: var(--kb-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mh-search-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------- колонки */
+
+.mh-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.mh-main {
+  flex: 999 1 600px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.mh-aside {
+  flex: 1 1 400px;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.mh-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.mh-section[data-tight] {
+  gap: 10px;
+}
+
+.mh-home[data-phone] .mh-section {
+  gap: 12px;
+}
+
+/* ----------------------------------------------------------- избранное */
+
+.mh-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mh-tile {
+  flex: 1 1 240px;
+  min-height: 152px;
+  box-sizing: border-box;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 16px 14px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  color: var(--kb-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mh-tile[data-wait] {
+  background: var(--kb-wait-bg);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.mh-tile-skeleton {
+  cursor: default;
+  background: #171613;
+}
+
+.mh-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mh-tile-names {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Длинное имя — в две строки, как в плитках «Все проекты», а не «Карта участко…». */
+.mh-tile-name {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  white-space: normal;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.mh-tile-path {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mh-badge-wait {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--kb-bg);
+  background: var(--kb-signal);
+  padding: 5px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.mh-star {
+  flex: none;
+  margin-top: 4px;
+}
+
+.mh-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+  margin-top: auto;
+}
+
+.mh-spark > span {
+  flex: 1;
+  border-radius: 1px;
+}
+
+.mh-tile-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 11px;
+  border-top: 1px solid var(--kb-line-soft);
+  font-size: 13px;
+  color: var(--kb-soft);
+}
+
+.mh-tile-status {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mh-home[data-phone] .mh-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mh-home[data-phone] .mh-tile {
+  min-height: 136px;
+  gap: 10px;
+  padding: 14px 12px 12px;
+}
+
+.mh-home[data-phone] .mh-tile:hover {
+  transform: none;
+}
+
+.mh-home[data-phone] .mh-tile:active {
+  transform: scale(0.98);
+}
+
+.mh-home[data-phone] .mh-tile-top {
+  gap: 8px;
+}
+
+.mh-home[data-phone] .mh-tile-names {
+  gap: 5px;
+}
+
+.mh-home[data-phone] .mh-tile-name {
+  font-size: 16px;
+}
+
+.mh-home[data-phone] .mh-tile-path {
+  font-size: 10px;
+}
+
+.mh-home[data-phone] .mh-spark {
+  gap: 2px;
+}
+
+.mh-home[data-phone] .mh-tile-foot {
+  gap: 8px;
+  padding-top: 10px;
+  font-size: 12.5px;
+}
+
+.mh-home[data-phone] .mh-tile[data-wait] .mh-tile-foot {
+  color: var(--kb-signal-text);
+}
+
+.mh-empty-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 18px;
+  background: var(--kb-panel);
+  border: 1px dashed var(--kb-line-strong);
+  border-radius: 6px;
+}
+
+.mh-empty-box p {
+  flex: 1 1 280px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+}
+
+/* ---------------------------------------------------- в работе, журнал */
+
+.mh-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--kb-line);
+}
+
+.mh-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.mh-row-n {
+  width: 20px;
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.mh-row-proj {
+  flex: 0 0 128px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mh-row-what {
+  flex: 1 1 240px;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--kb-soft);
+}
+
+.mh-row-what code {
+  font-size: 12px;
+  color: var(--kb-text);
+  overflow-wrap: anywhere;
+}
+
+.mh-bar {
+  position: relative;
+  width: 72px;
+  height: 4px;
+  flex: none;
+  background: rgba(255, 236, 210, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mh-bar > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.mh-bar-wait {
+  width: 100%;
+  background: repeating-linear-gradient(135deg, var(--kb-signal) 0 3px, transparent 3px 6px);
+}
+
+.mh-bar-run {
+  width: 28%;
+  background: var(--kb-signal);
+  /* A sweep that never leaves the track: the orange piece is always in view (DarkMain). */
+  animation: mh-sweep 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+
+@keyframes mh-sweep {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(257%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mh-bar-run {
+    animation: none;
+  }
+}
+
+.mh-row-dur {
+  min-width: 56px;
+  white-space: nowrap;
+  text-align: right;
+  font-size: 11px;
+  color: var(--kb-soft);
+}
+
+.mh-row-btn {
+  min-width: 92px;
+}
+
+.mh-empty {
+  padding: 14px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.mh-empty-idle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--kb-soft);
+}
+
+.mh-log-row {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  gap: 6px 16px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--kb-line-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mh-row-time {
+  width: 40px;
+  font-size: 11px;
+  color: var(--kb-mute);
+}
+
+.mh-log-proj {
+  flex: 0 0 128px;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mh-log-what {
+  flex: 1 1 240px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--kb-soft);
+}
+
+/* Narrow screens: a dialog title stays one line and ends with «…» instead of a ragged second line. */
+@media (max-width: 640px) {
+  .mh-log-what {
+    flex-basis: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.mh-row-res {
+  flex: none;
+  font-size: 10.5px;
+  color: var(--kb-soft);
+}
+
+/* -------------------------------------------------------------- календарь */
+
+.mh-add-event {
+  min-height: 32px;
+  gap: 6px;
+  padding: 0 12px;
+  border-color: var(--kb-line-btn);
+}
+
+.mh-add-event[data-touch] {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.mh-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--kb-well);
+}
+
+.mh-day {
+  position: relative;
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255, 236, 210, 0.06);
+  color: var(--kb-text);
+  cursor: pointer;
+}
+
+.mh-day:last-child {
+  border-right: none;
+}
+
+.mh-day[data-weekend] {
+  color: var(--kb-soft);
+}
+
+.mh-day-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: transparent;
+}
+
+.mh-day-w {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--kb-mute);
+}
+
+.mh-day-n {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.mh-day-dots {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+  align-items: flex-end;
+}
+
+.mh-day-dots > span {
+  width: 2px;
+  height: 6px;
+  background: rgba(237, 230, 218, 0.4);
+}
+
+.mh-day[aria-pressed='true'] {
+  background: rgba(255, 106, 43, 0.1);
+  color: var(--kb-signal);
+}
+
+.mh-day[aria-pressed='true'] .mh-day-bar {
+  background: var(--kb-signal);
+}
+
+.mh-day[aria-pressed='true'] .mh-day-w {
+  color: var(--kb-signal);
+}
+
+.mh-day[aria-pressed='true'] .mh-day-dots > span {
+  background: var(--kb-signal);
+}
+
+.mh-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mh-home[data-phone] .mh-events {
+  border-top: 1px solid var(--kb-line);
+}
+
+.mh-now {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  color: var(--kb-signal);
+}
+
+.mh-home[data-phone] .mh-now {
+  padding: 6px 0;
+}
+
+.mh-now-time {
+  width: 44px;
+  font-size: 10.5px;
+}
+
+.mh-now-line {
+  flex: 1;
+  height: 1px;
+  background: var(--kb-signal);
+  box-shadow: 0 0 8px rgba(255, 106, 43, 0.7);
+}
+
+.mh-now-label {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+}
+
+.mh-event {
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 8px 10px 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--kb-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mh-event-time {
+  width: 44px;
+  flex: none;
+  padding-top: 4px;
+  font-size: 11px;
+  color: var(--kb-text);
+}
+
+/* Событие, начатое в прошлый день: «до / 10:00» или «весь / день» в две строки по ширине колонки. */
+.mh-event-time[data-carried] {
+  line-height: 1.3;
+  color: var(--kb-soft);
+}
+
+.mh-event-icon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 4px;
+  color: var(--kb-soft);
+}
+
+.mh-event-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mh-event-title {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.mh-event-sub {
+  font-size: 12px;
+  color: var(--kb-mute);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.mh-event-left {
+  flex: none;
+  padding-top: 4px;
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.mh-event[data-next] .mh-event-time,
+.mh-event[data-next] .mh-event-left,
+.mh-event[data-next] .mh-event-icon {
+  color: var(--kb-signal);
+}
+
+.mh-event[data-next] .mh-event-icon {
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.mh-event[data-done] .mh-event-time,
+.mh-event[data-done] .mh-event-title,
+.mh-event[data-done] .mh-event-icon {
+  color: var(--kb-mute);
+}
+
+.mh-event[data-done] .mh-event-title {
+  text-decoration: line-through;
+}
+
+.mh-home[data-phone] .mh-event {
+  min-height: 64px;
+  align-items: center;
+  padding: 8px 4px 8px 0;
+  border-bottom: 1px solid var(--kb-line-soft);
+  border-radius: 0;
+}
+
+.mh-home[data-phone] .mh-event-time {
+  padding-top: 0;
+  font-size: 11.5px;
+}
+
+.mh-home[data-phone] .mh-event-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+}
+
+.mh-home[data-phone] .mh-event-title {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.mh-home[data-phone] .mh-event-sub {
+  font-size: 12.5px;
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mh-home[data-phone] .mh-event-left {
+  max-width: 64px;
+  padding-top: 0;
+  text-align: right;
+  line-height: 1.4;
+}
+
+.mh-done-row {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px 0 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--kb-line-soft);
+  color: var(--kb-mute);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mh-done-label {
+  flex: 1;
+  font-size: 14px;
+  color: var(--kb-soft);
+}
+
+.mh-note {
+  padding: 8px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+}
+
+.mh-note-title {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--kb-text);
+}
+
+/* ----------------------------------------------------------------- лимиты */
+
+.mh-limits {
+  gap: 14px;
+  padding: 18px 18px 16px;
+}
+
+.mh-limits[data-phone] {
+  gap: 10px;
+  padding: 12px 14px 14px;
+}
+
+.mh-gauges {
+  display: grid;
+  gap: 6px;
+}
+
+.mh-limits[data-phone] .mh-gauges {
+  gap: 4px;
+}
+
+.mh-gauges[aria-busy] {
+  opacity: 0.5;
+}
+
+.mh-pace {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kb-line-soft);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--kb-soft);
+}
+
+.mh-limits[data-phone] .mh-pace {
+  font-size: 13px;
+}
+
+.mh-pace-num {
+  color: var(--kb-text);
+}
+
+/* -------------------------------------------- «ждёт тебя» на телефоне */
+
+.mh-wait-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-wait-bg);
+  border: 1px solid rgba(255, 106, 43, 0.55);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.06), 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.mh-wait-stripe {
+  height: 6px;
+  background: repeating-linear-gradient(135deg, var(--kb-signal) 0 6px, transparent 6px 12px);
+}
+
+.mh-wait-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px 16px;
+}
+
+.mh-wait-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mh-wait-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-signal);
+}
+
+.mh-wait-meta {
+  font-size: 10.5px;
+  color: var(--kb-soft);
+}
+
+.mh-wait-who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mh-wait-mono {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  background: var(--kb-panel);
+  border: 1px solid rgba(255, 106, 43, 0.4);
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--kb-signal);
+}
+
+.mh-wait-names {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mh-wait-proj {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.mh-wait-session {
+  font-size: 13px;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mh-wait-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.mh-wait-cmd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 11.5px;
+  color: var(--kb-text);
+  overflow: hidden;
+}
+
+.mh-wait-prompt {
+  color: var(--kb-signal);
+}
+
+.mh-wait-cmd-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mh-wait-error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--kb-sand);
+}
+
+.mh-wait-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mh-wait-actions > .kb-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 10px;
+}
+
+.mh-wait-actions > .kb-btn.kb-pri {
+  gap: 10px;
+}
+
+.mh-allowed {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  background: var(--kb-panel);
+  border: 1px solid rgba(156, 196, 154, 0.35);
+  border-radius: 6px;
+  color: var(--kb-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mh-allowed-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mh-allowed-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.mh-allowed-sub {
+  font-size: 10.5px;
+  color: var(--kb-sage);
+}
+
+.mh-allowed-open {
+  font-size: 13px;
+  color: var(--kb-soft);
+}
+
+/* -------------------------------- классический интерфейс (без каркаса) */
+
+.mh-embedded {
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background-color: var(--kb-bg);
+  background-image:
+    linear-gradient(rgba(255, 236, 210, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 236, 210, 0.022) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px;
+  padding: 24px clamp(16px, 3vw, 40px) 48px;
+}
+
+.mh-embedded[data-phone] {
+  padding: 16px 16px 48px;
+}
+
+.mh-embedded-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+}

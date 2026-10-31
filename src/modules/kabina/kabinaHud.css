@@ -1,0 +1,652 @@
+/*
+ * «Кабина» — приборная строка (MIRAGE ChatLayoutB / ChatLayoutB-Phone). Токены — из kabina.css.
+ * Компьютер: полоса 32px по нижнему краю на всех экранах; каркас кончается над ней.
+ * Телефон: одна строка 40px под шапкой (в чате — под шапкой чата, на остальных экранах
+ * липнет к верху при прокрутке). Лимиты видны всегда.
+ */
+
+.kb-shell[data-hud]:not([data-phone]) {
+  height: calc(var(--kb-vv-height, 100vh) - 32px);
+}
+
+.kb-hud-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+}
+
+.kb-hud {
+  position: relative;
+  height: 32px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  background: #0d0c0b;
+  border-top: 1px solid var(--kb-line-btn);
+  color: var(--kb-text);
+  font-size: 12px;
+}
+
+.kb-hud-ticks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, rgba(255, 236, 210, 0.16) 0 1px, transparent 1px 8px);
+  pointer-events: none;
+}
+
+.kb-hud-left {
+  position: relative;
+  flex: 0 1 380px;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  border-right: 1px solid var(--kb-line);
+}
+
+/* Outside the chat there is no left part: the summary sits in the middle of the strip. */
+.kb-hud-left[data-empty] {
+  flex: 1 1 0;
+  border-right: none;
+}
+
+.kb-hud-left[data-empty] ~ .kb-hud-right {
+  flex: 1 1 0;
+  justify-content: flex-end;
+}
+
+.kb-hud-left[data-empty] ~ .kb-hud-center {
+  flex: 0 1 auto;
+}
+
+.kb-hud-center {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 12px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.kb-hud-live {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--kb-soft) !important;
+}
+
+.kb-hud-live .kb-led {
+  width: 7px;
+  height: 7px;
+}
+
+.kb-hud-live b {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--kb-text);
+}
+
+.kb-hud-live [data-tone='wait'],
+.kb-hud-live [data-tone='wait'] b {
+  color: var(--kb-signal-text);
+}
+
+.kb-hud-sep {
+  flex: none;
+  width: 1px;
+  height: 14px;
+  margin: 0 4px;
+  background: var(--kb-line-mid);
+}
+
+.kb-hud-right {
+  flex: none;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  border-left: 1px solid var(--kb-line);
+}
+
+.kb-hud-limits {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+/* One instrument: «НЕД ▬ 34%». The 2px mark on the top edge lights while its panel is open. */
+.kb-hud-cell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--kb-line-soft);
+  color: var(--kb-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.kb-hud-cell:hover {
+  background-color: #1a1815;
+}
+
+.kb-hud-cell:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.kb-hud-cell:disabled:hover {
+  background-color: transparent;
+}
+
+.kb-hud-cell:focus-visible {
+  outline-offset: -2px;
+}
+
+.kb-hud-mark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 2px;
+  background: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.kb-hud-cell:is([aria-expanded='true'], [aria-pressed='true']) {
+  background-color: #1f1813;
+}
+
+.kb-hud-cell:is([aria-expanded='true'], [aria-pressed='true']) .kb-hud-mark {
+  background: var(--kb-signal);
+}
+
+.kb-hud-label {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--kb-mute);
+}
+
+.kb-hud-cell:is([aria-expanded='true'], [aria-pressed='true']) .kb-hud-label {
+  color: var(--kb-signal-text);
+}
+
+.kb-hud-bar {
+  position: relative;
+  width: 26px;
+  height: 5px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 1px;
+  background: repeating-linear-gradient(90deg, rgba(255, 236, 210, 0.16) 0 1px, transparent 1px 25%), #24221e;
+}
+
+.kb-hud-bar > span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--kb-hud-fill, #cfc6b6);
+  transition: width 0.6s var(--kb-ease-dial);
+}
+
+.kb-hud-ring circle:last-child {
+  stroke: var(--kb-hud-fill, #cfc6b6);
+}
+
+.kb-hud-val {
+  font-size: 11px;
+  color: var(--kb-hud-value, var(--kb-text));
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-hud-unit {
+  color: var(--kb-mute);
+}
+
+/* Colour by fill: quiet below half, sand to 80 %, signal above (credits are always sand). */
+.kb-hud-meter[data-level='mid'],
+.kb-hud-meter[data-tone='sand'] {
+  --kb-hud-fill: var(--kb-sand);
+  --kb-hud-value: var(--kb-sand);
+}
+
+.kb-hud-meter[data-level='hot'] {
+  --kb-hud-fill: var(--kb-signal);
+  --kb-hud-value: var(--kb-signal-text);
+}
+
+.kb-hud-meter[data-level='hot'] .kb-hud-label {
+  color: var(--kb-signal-text);
+}
+
+.kb-hud-meter[data-level='none'] {
+  --kb-hud-value: var(--kb-mute);
+}
+
+.kb-hud .kb-bell-wrap {
+  display: flex;
+}
+
+.kb-hud .kb-bell {
+  width: 44px;
+  height: auto;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.kb-hud .kb-bell[aria-expanded='true'] {
+  background-color: #1f1813;
+}
+
+.kb-hud .kb-bell-badge {
+  top: 4px;
+  right: 7px;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  font-size: 8.5px;
+  box-shadow: none;
+}
+
+.kb-hud .kb-bell[data-attention] {
+  animation: none;
+  box-shadow: inset 0 2px 0 var(--kb-signal);
+}
+
+/* The bell's list opens up from the strip. */
+.kb-notes[data-placement='hud'] {
+  top: auto;
+  bottom: calc(100% + 8px);
+  right: 8px;
+  max-height: min(560px, calc(var(--kb-vv-height, 100vh) - 140px));
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.05) inset, 0 -24px 60px rgba(0, 0, 0, 0.55);
+  animation-name: kb-hud-pop-in;
+}
+
+/* Panels that open up from the strip (limits, the chat's dialogs list). */
+.kb-hud-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  z-index: 66;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.05) inset, 0 -24px 60px rgba(0, 0, 0, 0.55);
+  animation: kb-hud-pop-in 0.22s var(--kb-ease-out) both;
+}
+
+.kb-hud-pop[data-align='left'] {
+  left: 8px;
+}
+
+.kb-hud-pop[data-align='right'] {
+  right: 0;
+}
+
+@keyframes kb-hud-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+}
+
+.kb-hud-limits-pop {
+  width: min(360px, calc(100vw - 24px));
+  gap: 14px;
+  padding: 16px 16px 14px;
+}
+
+.kb-hud-pop-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kb-hud-pop-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-head);
+}
+
+.kb-hud-pop-meta {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+.kb-hud-pop-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+}
+
+.kb-hud-limit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  --kb-hud-fill: #cfc6b6;
+}
+
+.kb-hud-limit[data-level='mid'],
+.kb-hud-limit[data-tone='sand'] {
+  --kb-hud-fill: var(--kb-sand);
+}
+
+.kb-hud-limit[data-level='hot'] {
+  --kb-hud-fill: var(--kb-signal);
+}
+
+.kb-hud-limit-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.kb-hud-limit-name {
+  flex: 1;
+  font-size: 13px;
+}
+
+.kb-hud-limit-big {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-hud-limit-big > span {
+  font-size: 13px;
+  color: var(--kb-soft);
+}
+
+.kb-hud-limit-bar {
+  position: relative;
+  height: 8px;
+  padding: 1px;
+  box-sizing: border-box;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.kb-hud-limit-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--kb-hud-fill);
+}
+
+.kb-hud-limit-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, rgba(18, 17, 15, 0.9) 0 1px, transparent 1px 10%);
+}
+
+.kb-hud-limit-note {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+}
+
+.kb-hud-pace {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kb-line-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-hud-pace .kb-led {
+  width: 7px;
+  height: 7px;
+}
+
+.kb-hud-pace .kb-m {
+  color: var(--kb-text);
+}
+
+.kb-hud-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kb-hud-sheet .kb-hud-pop-title {
+  display: none;
+}
+
+/* The floating voice button stands above the strip on a computer. */
+.kb-voice-dock:not([data-phone]) {
+  bottom: 56px;
+}
+
+/* In the chat the «удерживай ⌥ Пробел» plate would sit over the context or the artifact;
+   the composer's microphone and the button's own label say it (ChatLayoutB has no plate). */
+.kb-voice-dock[data-stacked] .kb-voice-hint {
+  display: none;
+}
+
+/* Narrow computers: the unit tails go first. */
+@media (max-width: 1100px) {
+  .kb-hud-unit {
+    display: none;
+  }
+
+  .kb-hud-cell {
+    padding: 0 9px;
+  }
+}
+
+/* --- phone: one 40px row under the header */
+
+.kb-hud[data-phone] {
+  height: 40px;
+  flex: none;
+  border-top: none;
+  border-bottom: 1px solid var(--kb-line-btn);
+}
+
+.kb-hud[data-phone] .kb-hud-ticks {
+  top: auto;
+  bottom: 0;
+  background: repeating-linear-gradient(90deg, rgba(255, 236, 210, 0.14) 0 1px, transparent 1px 8px);
+}
+
+/* Page screens: the row bleeds to the screen edges and sticks to the top. */
+.kb-hud[data-phone][data-sticky] {
+  position: sticky;
+  top: -10px;
+  z-index: 30;
+  margin: -10px -16px -8px;
+}
+
+.kb-hud[data-phone] .kb-hud-right {
+  border-left: none;
+}
+
+.kb-hud[data-phone] .kb-hud-cell {
+  width: 48px;
+  flex: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  border-right: none;
+  border-left: 1px solid var(--kb-line-soft);
+}
+
+.kb-hud[data-phone] .kb-hud-mark {
+  top: auto;
+  bottom: -1px;
+}
+
+.kb-hud[data-phone] .kb-hud-label {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.kb-hud-pval {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Phone: the turn (or «сейчас») cell takes the rest of the row. */
+.kb-hud[data-phone] .kb-hud-turn {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: stretch;
+  padding: 0 8px 0 14px;
+  border-left: none;
+  text-align: left;
+}
+
+.kb-hud-cap {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-hud-cap[data-tone='wait'] {
+  color: var(--kb-signal-text);
+}
+
+.kb-hud-cap[data-tone='run'] {
+  color: var(--kb-soft);
+}
+
+.kb-hud-turn-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.kb-hud-turn-line .kb-led {
+  width: 7px;
+  height: 7px;
+}
+
+/* Sheets that keep the phone HUD in view open under it. */
+.kb-portal[data-below-hud] .kb-scrim,
+.kb-portal[data-below-hud] .kb-sheet-frame {
+  top: calc(var(--kb-vv-top, 0px) + var(--kb-hud-clear, 0px));
+  height: calc(var(--kb-vv-height, 100%) - var(--kb-hud-clear, 0px));
+}
+
+.kb-portal[data-below-hud] .kb-sheet {
+  max-height: 94%;
+}
+
+.kb-hud-pop[data-direction='down'] {
+  bottom: auto;
+  top: calc(100% + 8px);
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.05) inset, 0 24px 60px rgba(0, 0, 0, 0.55);
+  animation-name: kb-hud-drop-in;
+}
+
+@keyframes kb-hud-drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+}
+
+/* --- the one-row header with a screen's slot (the chat: dialog title, meta, project tabs) */
+
+.kb-header[data-slot] {
+  flex-wrap: nowrap;
+  gap: 12px 14px;
+}
+
+.kb-header[data-slot] .kb-crumbs {
+  flex: none;
+  flex-wrap: nowrap;
+}
+
+.kb-header[data-slot] .kb-crumb {
+  max-width: 200px;
+}
+
+.kb-header-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kb-header[data-slot] .kb-search-field {
+  flex: 0 1 260px;
+  min-width: 120px;
+}
+
+.kb-header[data-slot] .kb-crumbs {
+  gap: 10px;
+}
+
+/* ChatLayoutB: the clock is plain text in the one-row header. */
+.kb-header[data-slot] .kb-clock {
+  flex: none;
+  padding: 0;
+  border: none;
+}
+
+@media (max-width: 1520px) {
+  .kb-header[data-slot] .kb-clock > span:first-child {
+    display: none;
+  }
+}
+
+@media (max-width: 1240px) {
+  .kb-header[data-slot] .kb-clock {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .kb-header[data-slot] .kb-search-field {
+    flex: none;
+    min-width: 0;
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .kb-header[data-slot] .kb-search-text,
+  .kb-header[data-slot] .kb-search-field .kb-kbd {
+    display: none;
+  }
+}

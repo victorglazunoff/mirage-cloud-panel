@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26" width="1024" height="1024" fill="none">
+  <!-- Mirage Cloud Panel: round mark on a dark disc (gauge ring, signal-orange horizon, chevron) -->
+  <circle cx="13" cy="13" r="13" fill="#12110F"/>
+  <circle cx="13" cy="13" r="11.5" stroke="#EDE6DA" stroke-opacity="0.45"/>
+  <path d="M2.5 15.2h21" stroke="#FF6A2B" stroke-width="1.6"/>
+  <path d="M8 11.2l5-3.8 5 3.8" stroke="#EDE6DA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 1.5v2.4M1.5 13h2.4M22.1 13h2.4" stroke="#EDE6DA" stroke-opacity="0.45"/>
+</svg>

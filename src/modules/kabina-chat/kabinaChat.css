@@ -1,0 +1,5495 @@
+/*
+ * «Кабина» — экран «Чат проекта» (the design mock-up и
+ * DarkPhoneChat.dc.html). Классы kbc-*, токены — из kabina.css (--kb-*).
+ * Значения отступов, размеров и цветов перенесены из макетов без округлений.
+ */
+
+/* ------------------------------------------------------------ раскладка */
+
+/*
+ * ChatLayoutB + «рядом» из ChatLayoutC: колонки диалогов больше нет (список — из HUD и из
+ * заголовка), лента во всю ширину, текст — колонкой до 860px по центру. Контекст —
+ * выдвижная панель справа, артефакт — разделённый экран с перетаскиваемой границей; оба
+ * сдвигают ленту, а не перекрывают её.
+ */
+.kbc-screen {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.kbc-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.kbc-main,
+.kbc-right {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.kbc-main {
+  flex: 1 1 0;
+}
+
+.kbc-toolmain {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/*
+ * One column for the whole chat: every feed block (your message, Claude's reply, the journal,
+ * the cards) and the composer share the same left and right edges. The feed scrolls in the
+ * full width with the scrollbar at the edge; its gutter is reserved on both sides (a fixed
+ * 8px bar), so the column sits on the same centre as the composer, which mirrors the gutter
+ * in its own padding. With the context panel or an artifact beside, both shrink together.
+ */
+.kbc-main {
+  --kbc-col: 860px;
+  --kbc-col-pad: 12px;
+  --kbc-col-gutter: 8px;
+}
+
+.kbc-main > .kbc-log {
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+
+.kbc-main > .kbc-log::-webkit-scrollbar {
+  width: var(--kbc-col-gutter);
+}
+
+.kbc-main > .kbc-log::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kbc-main > .kbc-log::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 236, 210, 0.12);
+  border-radius: 4px;
+}
+
+/* Firefox has no ::-webkit-scrollbar: its thin bar is the same 8px. */
+@supports not selector(::-webkit-scrollbar) {
+  .kbc-main > .kbc-log {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 236, 210, 0.14) transparent;
+  }
+}
+
+.kbc-main .kbc-feed,
+.kbc-main > .kbc-bottom {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+.kbc-main .kbc-feed {
+  max-width: calc(var(--kbc-col) + 2 * var(--kbc-col-pad));
+  padding-left: var(--kbc-col-pad);
+  padding-right: var(--kbc-col-pad);
+}
+
+.kbc-main > .kbc-bottom {
+  max-width: calc(var(--kbc-col) + 2 * var(--kbc-col-pad) + 2 * var(--kbc-col-gutter));
+  padding-left: calc(var(--kbc-col-pad) + var(--kbc-col-gutter));
+  padding-right: calc(var(--kbc-col-pad) + var(--kbc-col-gutter));
+}
+
+.kbc-main > .kbc-bottom {
+  padding-top: 10px;
+}
+
+/* Context: a drawer on the right that pushes the feed (ChatLayoutB). */
+.kbc-right-ctx {
+  flex: 0 0 clamp(360px, 36%, 560px);
+  gap: 10px;
+  margin-left: 16px;
+  animation: kbc-slidein 0.35s var(--kb-ease-out) both;
+}
+
+.kbc-ptabs {
+  position: relative;
+}
+
+.kbc-right-ctx .kbc-ptabs {
+  grid-template-columns: 1fr 1fr 44px;
+}
+
+/* A panel on the right (context, artifact) runs down to the strip, and the shell's floating
+   voice button would sit on its bottom — «Сжать сессию», the file list, the artifact. Voice
+   stays at hand: the composer's microphone and the hotkey. */
+.kb-shell:has(.kbc-screen:is([data-ctx], [data-art])) > .kb-voice-dock:not([data-raised]) {
+  display: none;
+}
+
+/* Narrow computer layout (a phone on its side, a tablet): the 860px composer reaches the right
+   edge and the floating button sat on «Отправить». The composer has its own microphone. */
+@media (max-width: 1080px) {
+  .kb-shell:has(.kbc-screen) > .kb-voice-dock:not([data-phone]):not([data-raised]) {
+    display: none;
+  }
+}
+
+.kbc-ptab-x {
+  display: grid;
+  place-items: center;
+  background: var(--kb-panel);
+  border: none;
+  color: var(--kb-soft);
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.kbc-ptab-x:hover {
+  color: var(--kb-signal-text);
+  background-color: var(--kb-hover);
+}
+
+/* Artifact beside the feed: feed | divider | artifact, the share is the divider's. */
+.kbc-screen[data-art] .kbc-main {
+  flex: 0 0 calc(var(--kbc-split, 50%) - 8px);
+}
+
+.kbc-right-art {
+  flex: 1 1 0;
+}
+
+.kbc-screen[data-full] .kbc-main {
+  display: none;
+}
+
+.kbc-screen[data-dragging] {
+  cursor: col-resize;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The artifact frame would swallow the pointer mid-drag. */
+.kbc-screen[data-dragging] iframe {
+  pointer-events: none;
+}
+
+.kbc-split {
+  position: relative;
+  flex: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.kbc-split::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--kb-line);
+  transition: background-color 0.2s ease;
+}
+
+.kbc-split:hover::before,
+.kbc-split[data-dragging]::before {
+  background: rgba(255, 106, 43, 0.45);
+}
+
+.kbc-split-handle {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 88px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 4px;
+  cursor: col-resize;
+  touch-action: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* A finger-sized grab area around the slim handle. */
+.kbc-split-handle::after {
+  content: '';
+  position: absolute;
+  inset: -6px -14px;
+}
+
+.kbc-split-handle:hover,
+.kbc-split[data-dragging] .kbc-split-handle {
+  border-color: rgba(255, 106, 43, 0.6);
+  background: #1f1813;
+}
+
+.kbc-split-handle:focus-visible {
+  outline-offset: 2px;
+}
+
+.kbc-split-grip {
+  width: 4px;
+  height: 36px;
+  background: repeating-linear-gradient(180deg, rgba(255, 236, 210, 0.34) 0 1px, transparent 1px 4px);
+}
+
+.kbc-split-handle:hover .kbc-split-grip,
+.kbc-split[data-dragging] .kbc-split-grip {
+  background: repeating-linear-gradient(180deg, rgba(255, 138, 85, 0.8) 0 1px, transparent 1px 4px);
+}
+
+.kbc-split-share {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 3px;
+  background: var(--kb-bg);
+  font-size: 9.5px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.kbc-split-step {
+  position: relative;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 4px;
+  color: var(--kb-soft);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.kbc-split-step:hover:not(:disabled) {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kbc-split-step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.kbc-split-step:first-child {
+  margin-bottom: 10px;
+}
+
+.kbc-split-step:last-child {
+  margin-top: 22px;
+}
+
+/* ------------------------------------------------- заголовок в шапке каркаса */
+
+.kbc-htitle-wrap {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: min(150px, 100%);
+  max-width: 420px;
+  display: flex;
+}
+
+.kbc-htitle {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: -8px;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 14px;
+  color: var(--kb-soft);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.kbc-htitle:hover,
+.kbc-htitle[aria-expanded='true'] {
+  color: var(--kb-text);
+  border-color: var(--kb-line-btn);
+}
+
+.kbc-htitle .kbc-chev {
+  flex: none;
+  color: var(--kb-mute);
+  transition: transform 0.2s ease;
+}
+
+.kbc-htitle[aria-expanded='true'] .kbc-chev {
+  transform: rotate(180deg);
+}
+
+.kbc-htitle-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.kbc-htabs {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.kbc-htab {
+  position: relative;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 13.5px;
+  color: var(--kb-soft) !important;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.kbc-htab svg {
+  display: none;
+}
+
+.kbc-htab:hover {
+  color: var(--kb-text) !important;
+  background-color: var(--kb-hover);
+}
+
+.kbc-htab[aria-current='page'] {
+  color: var(--kb-text) !important;
+}
+
+/* The active tab's bar sits on the header's bottom rule (ChatLayoutB). */
+.kbc-htab[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -11px;
+  height: 2px;
+  background: var(--kb-signal);
+  box-shadow: 0 0 10px rgba(255, 106, 43, 0.5);
+}
+
+/* Narrower computers: clock and tab words give way in turn. */
+@media (max-width: 1240px) {
+  .kbc-htab svg {
+    display: block;
+  }
+
+  .kbc-htab-label {
+    display: none;
+  }
+
+  .kbc-htab {
+    width: 40px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .kbc-htab[aria-current='page']::after {
+    left: 8px;
+    right: 8px;
+  }
+}
+
+/* ------------------------------------------------- HUD чата (ChatLayoutB) */
+
+.kbc-hud-dlg-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.kbc-hud-dlg {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 8px;
+  padding: 0 12px 0 clamp(10px, 1.4vw, 18px);
+  border-right: none;
+  text-align: left;
+}
+
+.kbc-hud-chev {
+  flex: none;
+  color: var(--kb-mute);
+  transition: transform 0.2s ease;
+}
+
+.kbc-hud-dlg[aria-expanded='true'] .kbc-hud-chev {
+  transform: rotate(180deg);
+}
+
+.kbc-hud-mark {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 106, 43, 0.45);
+  border-radius: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--kb-signal);
+}
+
+.kbc-hud-proj {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.kbc-hud-slash {
+  flex: none;
+  font-size: 10px;
+  color: var(--kb-sep);
+}
+
+.kbc-hud-title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+  color: var(--kb-soft);
+}
+
+.kbc-hud-count {
+  flex: none;
+  margin-left: auto;
+  padding: 1px 5px;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 3px;
+  font-size: 9.5px;
+  color: var(--kb-mute);
+}
+
+.kbc-hud-turn .kb-led {
+  width: 7px;
+  height: 7px;
+}
+
+.kbc-hud-turnbtn {
+  flex: none;
+  min-height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.kbc-hud-turnbtn b {
+  font-weight: 400;
+  color: var(--kb-text);
+}
+
+.kbc-hud-turnbtn:hover b {
+  color: var(--kb-signal-text);
+}
+
+.kbc-hud-scan {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255, 236, 210, 0.1);
+}
+
+.kbc-hud-scan > .kb-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 28%;
+  background: var(--kb-signal);
+}
+
+.kbc-hud-status {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 10.5px;
+  color: var(--kb-soft);
+}
+
+.kbc-hud-status[data-tone='wait'] {
+  color: var(--kb-signal-text);
+}
+
+.kbc-hud-agents {
+  flex: none;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--kb-soft) !important;
+  white-space: nowrap;
+}
+
+.kbc-hud-agents b {
+  font-weight: 400;
+  color: var(--kb-text);
+}
+
+.kbc-hud-dim {
+  color: var(--kb-mute);
+}
+
+/* The dialogs list: up from the HUD or down from the header title. */
+.kbc-dlg-pop {
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(620px, calc(var(--kb-vv-height, 100vh) - 150px));
+  padding: 12px 10px 0;
+}
+
+.kbc-dlg-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.kbc-dlg-pop .kbc-sessions {
+  padding-bottom: 10px;
+}
+
+.kbc-dlg-pop .kbc-head-row {
+  padding: 0 4px;
+}
+
+.kbc-dlg-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  margin: 0 -10px;
+  padding: 0 14px;
+  border-top: 1px solid var(--kb-line-soft);
+  font-size: 12.5px;
+  color: var(--kb-soft) !important;
+}
+
+.kbc-dlg-foot-sheet {
+  margin: -12px -16px -16px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-top: none;
+}
+
+.kbc-dlg-foot .kb-m {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+@media (max-width: 1100px) {
+  .kbc-hud-turnbtn ~ .kbc-hud-status,
+  .kbc-hud-scan {
+    display: none;
+  }
+
+  .kb-hud-left {
+    flex-basis: 300px;
+  }
+}
+
+/* ------------------------------------------------------ колонка проекта */
+
+.kbc-proj {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kbc-proj-mark {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--kb-panel);
+  border: 1px solid rgba(255, 106, 43, 0.4);
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--kb-signal);
+}
+
+.kbc-proj-name {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-proj-path {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Columns follow the words (each its label plus an equal share of the rest): «Терминал»
+   and «Календарь» take the room the short tabs do not need and no longer touch. */
+.kbc-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  gap: 1px;
+  background: rgba(255, 236, 210, 0.08);
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.kbc-tab {
+  position: relative;
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0;
+  background: var(--kb-panel);
+  border: none;
+  color: var(--kb-soft) !important;
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.kbc-tab:hover {
+  color: var(--kb-text) !important;
+  background-color: var(--kb-hover);
+}
+
+.kbc-tab[aria-current='page'],
+.kbc-tab[aria-pressed='true'] {
+  background: #221c17;
+  color: var(--kb-signal-text) !important;
+}
+
+.kbc-tabs > .kbc-tab {
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.kbc-tabs > .kbc-tab > span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.kbc-tab-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+}
+
+.kbc-tab[aria-current='page'] .kbc-tab-bar,
+.kbc-tab[aria-pressed='true'] .kbc-tab-bar {
+  background: var(--kb-signal);
+}
+
+.kbc-head-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.kbc-ruler-n {
+  font-size: 10px;
+  color: var(--kb-signal);
+}
+
+.kbc-ruler-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-head);
+}
+
+.kbc-new {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--kb-text);
+  text-align: left;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.kbc-new:hover {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kbc-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  min-height: 0;
+  padding-bottom: 80px;
+}
+
+.kbc-srow {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 3px 4px 3px 0;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.kbc-srow:hover {
+  background-color: var(--kb-row-hover);
+}
+
+.kbc-srow[data-current] {
+  background: var(--kb-wait-bg);
+  border-color: rgba(255, 106, 43, 0.4);
+}
+
+.kbc-srow-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 4px 8px 12px;
+  color: var(--kb-text);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kbc-srow-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kbc-srow-title {
+  font-size: 14px;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-srow[data-current] .kbc-srow-title {
+  color: var(--kb-text);
+}
+
+.kbc-srow-time {
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.kbc-srow[data-current] .kbc-srow-time {
+  color: var(--kb-signal-text);
+}
+
+.kbc-srow-big {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--kb-sand);
+}
+
+.kbc-dots {
+  width: 32px;
+  height: 32px;
+  margin-top: 4px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--kb-mute);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.kbc-dots:hover {
+  border-color: rgba(255, 106, 43, 0.5);
+  color: var(--kb-signal-text);
+}
+
+.kbc-menu {
+  position: absolute;
+  z-index: 5;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--kb-panel-3);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+.kbc-srow .kbc-menu {
+  right: 4px;
+  top: 40px;
+}
+
+.kbc-menu-item {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--kb-soft);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.kbc-menu-item:hover,
+.kbc-menu-item[data-active] {
+  background-color: #24221e;
+  color: var(--kb-text);
+}
+
+.kbc-menu-item[data-tone='sand'] {
+  color: var(--kb-sand);
+}
+
+.kbc-rename {
+  width: 100%;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  background: var(--kb-bg);
+  border: 1px solid rgba(255, 106, 43, 0.55);
+  border-radius: 4px;
+  color: var(--kb-text);
+  font-size: 14px;
+  outline: none;
+}
+
+.kbc-more {
+  min-height: 36px;
+  margin-top: 4px;
+  background: transparent;
+  border: 1px dashed var(--kb-line-btn);
+  border-radius: 5px;
+  color: var(--kb-mute);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.kbc-more:hover {
+  color: var(--kb-signal-text);
+}
+
+/* ------------------------------------------------------- шапка диалога */
+
+.kbc-dhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--kb-line);
+}
+
+/* DarkChat: «Выкладка цен на прод  1 ч 12 мин · 38 МБ · 52 сообщения» — one line, the title
+   gives way with an ellipsis and the meta stays beside it. */
+.kbc-dline {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.kbc-dtitle {
+  margin: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.kbc-dmeta {
+  flex: none;
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.kbc-now {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--kb-soft) !important;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.kbc-now:hover {
+  color: var(--kb-signal-text) !important;
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kbc-now b {
+  font-weight: 400;
+  color: var(--kb-text);
+}
+
+/* ---------------------------------------------------------------- лента */
+
+.kbc-log {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* A swipe that runs past either end of the feed stays in it: it does not pan the page
+     (iOS with the keyboard up) or pull the whole screen down. */
+  overscroll-behavior-y: contain;
+  display: flex;
+  flex-direction: column;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 28px);
+}
+
+.kbc-feed {
+  /* Short dialogs sit at the bottom, by the composer (the mock-up's column-reverse look). */
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 28px 2px 6px;
+}
+
+.kbc-older {
+  align-self: center;
+  min-height: 32px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--kb-soft);
+  cursor: pointer;
+}
+
+.kbc-older:hover {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kbc-you {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+}
+
+/* Pictures and files sent with the user's message: the authors' thumbnails (lightbox on
+   click) and download cards, squared to the feed's 4px corners and kept to the left. */
+.kbc-you-att {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kbc-you-att > .flex-wrap {
+  justify-content: flex-start;
+}
+
+.kbc-you-att .rounded-xl,
+.kbc-you-att .rounded-lg {
+  border-radius: 4px;
+}
+
+.kbc-you-att .shadow-sm {
+  box-shadow: none;
+}
+
+.kbc-you-att img {
+  outline: 1px solid rgba(255, 255, 255, 0.1);
+  outline-offset: -1px;
+}
+
+.kbc-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kbc-who-you {
+  color: var(--kb-head);
+}
+
+.kbc-who-claude {
+  color: var(--kb-signal);
+}
+
+.kbc-steered {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 106, 43, 0.45);
+  border-radius: 3px;
+  color: var(--kb-signal-text);
+  letter-spacing: 0.12em;
+}
+
+.kbc-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  text-wrap: pretty;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.kbc-claude {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kbc-claude-who {
+  gap: 8px;
+}
+
+/* Ответ Claude — markdown авторов в типографике макета. Во всю ширину колонки ленты, как
+   реплика и журнал. Длинное слово или путь в абзаце переносится (break-word, не anywhere:
+   anywhere сжимает min-content и ломает таблицы по буквам). */
+.kbc-md {
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--kb-text);
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+
+.kbc-md > :first-child {
+  margin-top: 0;
+}
+
+.kbc-md > :last-child {
+  margin-bottom: 0;
+}
+
+.kbc-md p {
+  margin: 0 0 10px;
+}
+
+.kbc-md :where(h1, h2, h3, h4) {
+  margin: 16px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.kbc-md h1 {
+  font-size: 17px;
+}
+
+.kbc-md :where(ul, ol) {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.kbc-md li {
+  margin: 2px 0;
+}
+
+.kbc-md li::marker {
+  color: var(--kb-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Numbers hang left of the text: «10.» and «150.» are wider than the 20px indent and
+   would stick out of the column (cut off at the phone's edge) — the indent grows with them. */
+.kbc-md ol:has(> li:nth-child(10)) {
+  padding-left: 2.1em;
+}
+
+.kbc-md ol:has(> li:nth-child(100)) {
+  padding-left: 2.7em;
+}
+
+.kbc-md a {
+  color: var(--kb-signal-text);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 138, 85, 0.4);
+  text-underline-offset: 3px;
+}
+
+.kbc-md strong {
+  font-weight: 600;
+}
+
+.kbc-md :not(pre) > code {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-stretch: 87.5%;
+  font-size: 12.5px;
+  color: var(--kb-signal-text);
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+.kbc-md pre {
+  margin: 0 0 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 11px 12px;
+  background: var(--kb-bg) !important;
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.kbc-md pre code {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-stretch: 87.5%;
+  font-size: 12px;
+}
+
+.kbc-md blockquote {
+  margin: 0 0 10px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(255, 106, 43, 0.45);
+  color: var(--kb-soft);
+}
+
+/* Таблица — в своём боксе с горизонтальной прокруткой: по содержимому, но не уже колонки;
+   колонку ленты она не растягивает и слова по буквам не рвёт. */
+.kbc-md div:has(> table) {
+  max-width: 100%;
+  margin: 0 0 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line);
+  border-radius: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 236, 210, 0.16) transparent;
+}
+
+.kbc-md div:has(> table)::-webkit-scrollbar {
+  height: 6px;
+}
+
+.kbc-md div:has(> table)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kbc-md div:has(> table)::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 236, 210, 0.16);
+  border-radius: 3px;
+}
+
+.kbc-md table {
+  width: auto;
+  min-width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.5;
+  text-wrap: wrap;
+}
+
+.kbc-md th,
+.kbc-md td {
+  min-width: 9ch;
+  padding: 7px 12px;
+  border: none;
+  border-bottom: 1px solid var(--kb-line-soft, var(--kb-line));
+  text-align: left;
+  vertical-align: top;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: manual;
+}
+
+.kbc-md tr > * + * {
+  border-left: 1px solid var(--kb-line-soft, var(--kb-line));
+}
+
+.kbc-md tr:last-child > td {
+  border-bottom: none;
+}
+
+.kbc-md thead {
+  background: var(--kb-panel-3);
+}
+
+.kbc-md th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--kb-soft);
+  text-wrap: balance;
+}
+
+/* Числа (ИНН, ОГРН, телефон, сумма) — одной строкой, моноширинными цифрами. */
+.kbc-md td[data-num] {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.kbc-md hr {
+  border: none;
+  border-top: 1px solid var(--kb-line);
+  margin: 14px 0;
+}
+
+/* Журнал шагов */
+
+.kbc-tools {
+  align-self: stretch;
+  max-width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 0 10px;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line);
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--kb-soft);
+  text-align: left;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.kbc-tools:hover {
+  background-color: var(--kb-panel-3);
+  border-color: rgba(255, 236, 210, 0.16);
+}
+
+.kbc-chev {
+  flex: none;
+  transition: transform 0.2s ease;
+}
+
+.kbc-tools[aria-expanded='true'] .kbc-chev {
+  transform: rotate(90deg);
+}
+
+.kbc-tools-cap {
+  flex: none;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kbc-tools-sum {
+  min-width: 0;
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-tools-total {
+  flex: none;
+  margin-left: auto;
+  font-size: 10.5px;
+}
+
+.kbc-steps {
+  list-style: none;
+  margin: 0 0 0 15px;
+  padding: 4px 0 4px 14px;
+  border-left: 1px dashed rgba(255, 236, 210, 0.16);
+  display: flex;
+  flex-direction: column;
+}
+
+.kbc-step {
+  display: flex;
+  flex-direction: column;
+}
+
+.kbc-step-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 11.5px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.kbc-step-row:hover .kbc-step-arg {
+  color: var(--kb-text);
+}
+
+/* The step row is a div: a button stretched under it toggles the detail, the file link sits above it. */
+div.kbc-step-row {
+  position: relative;
+}
+
+.kbc-step-hit {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.kbc-step-hit:focus-visible {
+  outline: 1px solid var(--kb-signal-text);
+  outline-offset: 1px;
+}
+
+.kbc-step-row .kbc-path {
+  position: relative;
+  z-index: 1;
+  text-decoration: underline dotted;
+  text-decoration-color: rgba(255, 236, 210, 0.25);
+  text-underline-offset: 3px;
+}
+
+.kbc-step-row .kbc-path:hover {
+  text-decoration-style: solid;
+  text-decoration-color: rgba(255, 106, 43, 0.7);
+}
+
+/* Путь к файлу в ленте: открывает файл в Файлах */
+.kbc-path {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.kbc-path:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(255, 106, 43, 0.7);
+}
+
+.kbc-path:focus-visible {
+  outline: 1px solid var(--kb-signal-text);
+  outline-offset: 2px;
+}
+
+/* In Claude's text a path reads as a path (plain or code), underlined only on hover. */
+.kbc-md a.kbc-path {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* A path in plain text gets a faint dotted line, so it reads as something to click. */
+.kbc-md a.kbc-path:not(:has(code)) {
+  text-decoration: underline dotted;
+  text-decoration-color: rgba(255, 236, 210, 0.28);
+  text-underline-offset: 3px;
+}
+
+.kbc-md a.kbc-path:hover {
+  text-decoration: underline;
+  text-decoration-style: solid;
+  text-decoration-color: rgba(255, 138, 85, 0.7);
+}
+
+.kbc-step-n {
+  width: 26px;
+  flex: none;
+  color: var(--kb-mute);
+}
+
+.kbc-step-tool {
+  width: 40px;
+  flex: none;
+  color: var(--kb-head);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-step-arg {
+  flex: 1;
+  min-width: 0;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s ease;
+}
+
+.kbc-step-res {
+  flex: none;
+}
+
+:where(.kbc-screen, .kbc-phone, .kbc-pfull) [data-tone='ok'] {
+  color: var(--kb-sage);
+}
+
+:where(.kbc-screen, .kbc-phone, .kbc-pfull) [data-tone='mute'] {
+  color: var(--kb-mute);
+}
+
+:where(.kbc-screen, .kbc-phone, .kbc-pfull) [data-tone='run'] {
+  color: var(--kb-signal-text);
+}
+
+:where(.kbc-screen, .kbc-phone, .kbc-pfull) [data-tone='err'] {
+  color: var(--kb-signal);
+}
+
+.kbc-step-detail {
+  margin: 2px 0 8px 38px;
+  max-height: 280px;
+  overflow: auto;
+  padding: 10px 12px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.kbc-step-detail b {
+  font-weight: 500;
+  color: var(--kb-head);
+}
+
+/* Метки и заметки */
+
+.kbc-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.kbc-note-led {
+  margin-top: 4px;
+}
+
+/* Карточка артефакта в ленте */
+
+.kbc-artcard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 12px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+}
+
+.kbc-artcard[data-open] {
+  border-color: rgba(255, 106, 43, 0.45);
+}
+
+.kbc-art-ico {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 106, 43, 0.08);
+  border: 1px solid rgba(255, 106, 43, 0.3);
+  border-radius: 4px;
+  color: var(--kb-signal);
+}
+
+.kbc-art-title {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-art-meta {
+  font-size: 10px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-btn-sm {
+  min-height: 36px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--kb-line-strong);
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--kb-text);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.kbc-btn-sm:hover {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kbc-btn-sm[aria-pressed='true'] {
+  background: rgba(255, 106, 43, 0.14);
+  color: var(--kb-signal-text);
+}
+
+.kbc-btn-sm[data-fill] {
+  background: #22201c;
+  border-color: var(--kb-line-btn);
+}
+
+/* Карточка «Нужно твоё решение» */
+
+.kbc-decision {
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-wait-bg);
+  border: 1px solid rgba(255, 106, 43, 0.55);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.06);
+}
+
+.kbc-decision-stripe {
+  height: 6px;
+  background: repeating-linear-gradient(135deg, var(--kb-signal) 0 6px, transparent 6px 12px);
+}
+
+.kbc-decision-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.kbc-decision-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.kbc-decision-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-signal);
+}
+
+.kbc-decision-wait {
+  font-size: 10.5px;
+  color: var(--kb-soft);
+}
+
+.kbc-cmdline {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--kb-text);
+  overflow-x: auto;
+  max-height: 220px;
+}
+
+.kbc-cmdline > span:first-child {
+  color: var(--kb-signal);
+}
+
+.kbc-cmdline pre {
+  margin: 0;
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.kbc-cmdline-note {
+  color: var(--kb-mute);
+}
+
+.kbc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* «В фоне ещё идёт работа»: the list and the text start where the title does (20px). */
+.kbc-bgwork {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 20px 0;
+}
+
+/* The buttons are the modal's pinned footer (always in view on a phone); 14px = the old gap. */
+.kbc-bgwork-actions {
+  justify-content: flex-end;
+  padding: 14px 20px 18px;
+}
+
+.kbc-bgwork-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kbc-bgwork-list > li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--kb-head);
+  overflow-wrap: anywhere;
+}
+
+.kbc-bgwork-list > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kb-signal);
+  box-shadow: 0 0 0 3px rgba(255, 106, 43, 0.16);
+}
+
+.kbc-bgwork-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+}
+
+@media (max-width: 560px) {
+  .kbc-bgwork-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 14px 20px 16px;
+  }
+
+  .kbc-bgwork-actions > .kb-out {
+    grid-column: 1 / -1;
+  }
+}
+
+.kbc-actions .kb-btn {
+  min-height: 44px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+.kbc-decided {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  font-size: 11.5px;
+}
+
+.kbc-plan {
+  max-height: 340px;
+  overflow: auto;
+  padding: 12px 14px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+}
+
+.kbc-question {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kbc-question-q {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.kbc-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kbc-option {
+  min-height: 36px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--kb-line-strong);
+  border-radius: 5px;
+  color: var(--kb-soft);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.kbc-option[aria-pressed='true'] {
+  background: rgba(255, 106, 43, 0.14);
+  border-color: rgba(255, 106, 43, 0.55);
+  color: var(--kb-signal-text);
+}
+
+/* ------------------------------------------------- полоса хода и Стоп */
+
+.kbc-bottom {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kbc-runbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  min-height: 30px;
+}
+
+.kbc-runbar .kb-hold {
+  min-height: 30px;
+}
+
+.kbc-scanbar {
+  position: relative;
+  width: 56px;
+  height: 3px;
+  flex: none;
+  background: rgba(255, 236, 210, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.kbc-scanbar > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 28%;
+  background: var(--kb-signal);
+}
+
+.kbc-runbar-hint {
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.kbc-notice {
+  font-size: 12px;
+  color: var(--kb-sand);
+}
+
+/* Одна строка состояния над композером: ход, Стоп, «сейчас | после хода», чип очереди.
+   Без хода и очереди её нет вовсе — лента забирает высоту. */
+.kbc-sline {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  animation: kbc-sline-in 0.22s var(--kb-ease-out) both;
+}
+
+@keyframes kbc-sline-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.kbc-sl-stop.kb-hold {
+  height: 32px;
+  min-height: 32px;
+  flex: none;
+  gap: 7px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  line-height: 1;
+}
+
+.kbc-sl-turn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.kbc-sl-turn b {
+  font-weight: 400;
+  color: var(--kb-text);
+}
+
+.kbc-sl-clock {
+  flex: none;
+}
+
+.kbc-sl-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--kb-soft);
+}
+
+.kbc-sl-status[data-tone='wait'] {
+  color: var(--kb-signal-text);
+}
+
+.kbc-sl-gap {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.kbc-sl-note {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kbc-sline .kbc-runbar-hint,
+.kbc-sline .kbc-runbar-cmd {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kbc-sline .kbc-seg[data-size='when'] {
+  flex: none;
+}
+
+.kbc-sline .kbc-seg[data-size='when'] > button {
+  min-height: 28px;
+  padding: 0 11px;
+  font-size: 12.5px;
+}
+
+.kbc-sl-queue {
+  position: relative;
+  flex: none;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px 0 10px;
+  background: rgba(255, 106, 43, 0.1);
+  border: 1px solid rgba(255, 106, 43, 0.38);
+  border-radius: 6px;
+  color: var(--kb-signal-text);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition-property: background-color, border-color, transform;
+  transition-duration: 0.15s;
+  transition-timing-function: ease-out;
+}
+
+.kbc-sl-queue:hover,
+.kbc-sl-queue[aria-expanded='true'] {
+  background: rgba(255, 106, 43, 0.18);
+  border-color: rgba(255, 106, 43, 0.6);
+}
+
+.kbc-sl-queue:active {
+  transform: scale(0.96);
+}
+
+.kbc-sl-qcount {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--kb-text);
+}
+
+.kbc-sl-queue .kbc-chev {
+  transition: transform 0.18s var(--kb-ease-out);
+}
+
+/* The list opens upwards: the chevron turns to point at it. */
+.kbc-sl-queue[aria-expanded='true'] .kbc-chev {
+  transform: rotate(-90deg);
+}
+
+.kbc-sl-agents {
+  min-height: 36px;
+  min-width: 36px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--kb-soft) !important;
+}
+
+/* Phone: the same line, thumb-sized and tighter. */
+.kbc-sline[data-phone] {
+  container-type: inline-size;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 2px;
+}
+
+.kbc-sline[data-phone] .kbc-sl-stop.kb-hold {
+  height: 36px;
+  min-height: 36px;
+  gap: 6px;
+  padding: 0 11px;
+  border-color: rgba(255, 236, 210, 0.16);
+  border-radius: 18px;
+  font-size: 13px;
+}
+
+.kbc-sline[data-phone] .kbc-sl-stop.kb-hold .kb-hold-tag {
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  color: var(--kb-soft);
+}
+
+.kbc-sline[data-phone] .kbc-sl-turn {
+  gap: 7px;
+}
+
+.kbc-sline[data-phone] .kbc-seg[data-size='when'] > button {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.kbc-sline[data-phone] .kbc-sl-queue {
+  min-height: 36px;
+  min-width: 44px;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 7px 0 9px;
+  border-radius: 18px;
+}
+
+/* The phone line never wraps: as room runs out, «ход» goes first (the clock and the LED say
+   it), then «шаг», then the «ДЕРЖИ» tag (the fill still shows the hold), then the steps. */
+@container (max-width: 370px) {
+  .kbc-sline .kbc-sl-word[data-word='turn'] {
+    display: none;
+  }
+}
+
+@container (max-width: 330px) {
+  .kbc-sline .kbc-sl-word[data-word='step'] {
+    display: none;
+  }
+}
+
+@container (max-width: 300px) {
+  .kbc-sline .kbc-sl-stop .kb-hold-tag,
+  .kbc-sline .kbc-sl-steps {
+    display: none;
+  }
+}
+
+/* The queue chip takes its room: on desktop from the scan bar (the LED still pulses),
+   on the phone from the words and the tag. */
+.kbc-sline[data-queue] .kbc-scanbar {
+  display: none;
+}
+
+.kbc-sline[data-phone][data-queue] .kbc-sl-word,
+.kbc-sline[data-phone][data-queue] .kbc-sl-stop .kb-hold-tag {
+  display: none;
+}
+
+.kbc-sline[data-phone][data-queue] .kbc-seg[data-size='when'] > button {
+  padding: 0 9px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kbc-sline {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------- композер */
+
+.kbc-composer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.04) inset, 0 14px 36px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kbc-composer:focus-within {
+  border-color: rgba(255, 106, 43, 0.55);
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.08), 0 14px 36px rgba(0, 0, 0, 0.4);
+}
+
+.kbc-composer[data-drag] {
+  border-color: rgba(255, 106, 43, 0.8);
+  border-style: dashed;
+}
+
+.kbc-ctop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 5px 6px 5px 12px;
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.kbc-cap {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+}
+
+.kbc-seg {
+  display: flex;
+  padding: 2px;
+  background: var(--kb-bg);
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 5px;
+}
+
+.kbc-seg > button {
+  min-height: 26px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--kb-soft);
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.kbc-seg > button:hover {
+  color: var(--kb-text);
+}
+
+.kbc-seg > button[aria-pressed='true'] {
+  background: rgba(255, 106, 43, 0.14);
+  color: var(--kb-signal-text);
+}
+
+/* DarkStates E2: Bypass shown locked under root; a press opens the reason in place. */
+.kbc-seg > button.kbc-seg-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--kb-mute);
+  border-left: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 0 3px 3px 0;
+  cursor: help;
+}
+
+.kbc-seg > button.kbc-seg-locked:hover,
+.kbc-seg > button.kbc-seg-locked[aria-expanded='true'] {
+  color: var(--kb-soft);
+}
+
+/* Opens upwards over the feed: the composer sits at the bottom of the screen. */
+.kbc-bypass-pop {
+  position: absolute;
+  z-index: 30;
+  left: 8px;
+  bottom: calc(100% + 6px);
+  width: min(460px, calc(100% - 16px));
+  border-radius: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+.kbc-bypass-pop .kb-bypass {
+  background: var(--kb-panel-3);
+}
+
+/* The composer (or the sheet) already shows the modes right next to the card. */
+.kbc-bypass-pop .kb-bypass-modes,
+.kbc-psheet-bypass .kb-bypass-modes {
+  display: none;
+}
+
+.kbc-pbypass {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--kb-mute);
+  cursor: pointer;
+}
+
+/* DarkStates L4 on the phone: the plaque sits between the feed and the composer. */
+.kbc-pbig {
+  flex: none;
+  padding: 0 16px 10px;
+}
+
+/* Phone: the feed is short, so the plaque keeps only the size, the scale and the choice;
+   the reason is in the buttons' words and in the sessions sheet («большая · N МБ»). */
+.kbc-pbig > .kb-bigsession {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'tag size'
+    'scale scale'
+    'actions actions';
+  align-items: center;
+  gap: 10px 12px;
+  padding: 12px 14px;
+}
+
+.kbc-pbig .kb-bigsession-tagrow {
+  grid-area: tag;
+}
+
+.kbc-pbig .kb-bigsession-size {
+  grid-area: size;
+  justify-content: flex-end;
+}
+
+.kbc-pbig .kb-bigsession-num {
+  font-size: 26px;
+}
+
+.kbc-pbig .kb-bigsession-scale {
+  grid-area: scale;
+}
+
+.kbc-pbig .kb-bigsession-text {
+  display: none;
+}
+
+.kbc-pbig .kb-bigsession-actions,
+.kbc-pbig .kb-bigsession-outcome {
+  grid-area: actions;
+  flex-wrap: nowrap;
+  margin-top: 0;
+}
+
+.kbc-pbig .kb-bigsession-actions .kb-btn {
+  flex: 1 1 0;
+  min-height: 40px;
+}
+
+/* DarkStates L4 above the DarkChat composer: on a wide column the plaque lies in one band —
+   tag and size on the left, the scale and the reason in the middle, the choice on the right —
+   so the feed keeps its height. */
+.kbc-bottom > .kb-bigsession {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'tag scale actions'
+    'size text actions';
+  align-items: center;
+  gap: 8px 22px;
+  padding: 12px 16px;
+}
+
+.kbc-bottom > .kb-bigsession .kb-bigsession-tagrow {
+  grid-area: tag;
+}
+
+.kbc-bottom > .kb-bigsession .kb-bigsession-size {
+  grid-area: size;
+  align-self: start;
+}
+
+.kbc-bottom > .kb-bigsession .kb-bigsession-scale {
+  grid-area: scale;
+}
+
+.kbc-bottom > .kb-bigsession .kb-bigsession-text {
+  grid-area: text;
+  align-self: start;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.kbc-bottom > .kb-bigsession .kb-bigsession-num {
+  font-size: 34px;
+}
+
+.kbc-bottom > .kb-bigsession .kb-bigsession-actions,
+.kbc-bottom > .kb-bigsession .kb-bigsession-outcome {
+  grid-area: actions;
+  margin-top: 0;
+}
+
+.kbc-bottom > .kb-bigsession .kb-bigsession-actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+@media (max-width: 1100px) {
+  .kbc-bottom > .kb-bigsession {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'tag scale'
+      'size text'
+      'actions actions';
+  }
+
+  .kbc-bottom > .kb-bigsession .kb-bigsession-actions {
+    flex-direction: row;
+  }
+}
+
+.kbc-seg[data-size='when'] {
+  border-radius: 6px;
+}
+
+.kbc-seg[data-size='when'] > button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.kbc-hint {
+  font-size: 12px;
+  color: var(--kb-mute);
+  text-wrap: pretty;
+}
+
+/* Приёмка 2: the rows of the composer never push a button onto its own line — the hint
+   gives way instead (up to two lines, then cut), the segments and buttons keep their size. */
+.kbc-ctop[data-row] {
+  flex-wrap: nowrap;
+}
+
+.kbc-ctop[data-row] > .kbc-cap,
+.kbc-ctop[data-row] > .kbc-seg,
+.kbc-ctop > .kbc-model {
+  flex-shrink: 0;
+}
+
+.kbc-ctop > .kbc-mode-hint,
+.kbc-cbottom > .kbc-send-hint {
+  flex: 0 1 auto;
+  min-width: 0;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.kbc-cbottom > .kbc-send-hint {
+  padding-left: 4px;
+}
+
+.kbc-cbottom > .kbc-seg,
+.kbc-cbottom > .kbc-send {
+  flex-shrink: 0;
+}
+
+.kbc-model {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--kb-text);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.kbc-model:hover {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+/* «Модель и effort» opens UP from the composer (it sits at the bottom of the screen), no wider
+   than the screen and no taller than the room above it (measured, see ModelMenu). */
+.kbc-model-pop {
+  top: auto;
+  bottom: calc(100% + 8px);
+  right: 0;
+  width: min(340px, calc(100vw - 24px));
+  max-height: min(560px, calc(var(--kb-vv-height, 100vh) - 180px));
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 30;
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.05) inset, 0 -18px 44px rgba(0, 0, 0, 0.55);
+}
+
+.kbc-model-menu[data-inline] {
+  position: static;
+  box-shadow: none;
+}
+
+/* The menu is a column with a max height that scrolls: its rows keep their own height
+   (flex items shrink by default — the model rows used to be squeezed to half a line). */
+.kbc-model-menu > * {
+  flex-shrink: 0;
+}
+
+/* Effort: a grid of equal cells — seven levels never ride over one another. */
+.kbc-effort {
+  display: grid;
+  /* Seven levels: four and three, equal cells. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  margin: 0 6px 6px;
+  padding: 2px;
+  background: var(--kb-bg);
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 5px;
+}
+
+.kbc-effort > button {
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.kbc-effort > button:hover {
+  color: var(--kb-text);
+}
+
+.kbc-effort > button[aria-pressed='true'] {
+  background: rgba(255, 106, 43, 0.14);
+  color: var(--kb-signal-text);
+}
+
+/* A model: the name and one short line under it — two full lines, never clipped. */
+.kbc-model-item {
+  position: relative;
+  min-height: 46px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 12px;
+}
+
+.kbc-model-name {
+  display: block;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 18px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.kbc-model-desc {
+  display: block;
+  min-width: 0;
+  font-size: 10.5px;
+  line-height: 15px;
+  color: var(--kb-mute);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The chosen model: the whole row lit, a signal tick on its left edge. */
+.kbc-model-item[data-active] {
+  background-color: rgba(255, 106, 43, 0.1);
+}
+
+.kbc-model-item[data-active]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--kb-signal);
+}
+
+.kbc-model-item[data-active] .kbc-model-name {
+  color: var(--kb-signal-text);
+}
+
+.kbc-model-item[data-active] .kbc-model-desc {
+  color: var(--kb-soft);
+}
+
+.kbc-pop-cap {
+  padding: 8px 10px 6px;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+}
+
+.kbc-textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  /* One to two lines by default (the authors' autosize grows it): the feed keeps the height. */
+  min-height: 46px;
+  max-height: 40vh;
+  resize: none;
+  padding: 10px 14px 4px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--kb-text);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.kbc-textarea:focus-visible {
+  outline: none;
+}
+
+/* DarkCommands: «Tab → /команда» sits on the input's first line while the «/» menu is open. */
+.kbc-input-wrap {
+  position: relative;
+}
+
+.kbc-tab-ghost {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 11px;
+  color: var(--kb-mute);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.kbc-tab-ghost > span {
+  color: var(--kb-signal-text);
+}
+
+.kbc-runbar-cmd {
+  font-size: 12px;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+/* Artifact open beside the chat: «ПРАВА» keeps every mode (Bypass with its word) and the
+   model button stays at the right of the same row, as in DarkChat with an artifact. */
+.kbc-composer[data-compact] .kbc-ctop {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.kbc-composer[data-compact] .kbc-seg > button {
+  padding: 0 8px;
+}
+
+.kbc-composer[data-compact] .kbc-model {
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 0 8px;
+}
+
+.kbc-cbottom {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px 6px;
+}
+
+.kbc-ib {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--kb-soft);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.kbc-ib:hover {
+  border-color: rgba(255, 106, 43, 0.5);
+  color: var(--kb-signal-text);
+}
+
+.kbc-ib[data-danger]:hover {
+  border-color: transparent;
+  color: var(--kb-signal-text);
+}
+
+.kbc-send {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 0 14px;
+  background: var(--kb-signal);
+  color: var(--kb-bg);
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease-out, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.kbc-send:hover {
+  background-color: var(--kb-signal-hover);
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.18);
+}
+
+.kbc-send:active {
+  transform: scale(0.96);
+}
+
+.kbc-send[aria-disabled='true'] {
+  cursor: default;
+}
+
+.kbc-send-kbd {
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 3px 6px;
+  border-radius: 3px;
+  background: rgba(18, 17, 15, 0.14);
+}
+
+.kbc-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px 0;
+}
+
+.kbc-attach {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  min-height: 28px;
+  padding: 0 4px 0 10px;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--kb-soft);
+}
+
+.kbc-attach > span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-attach > button {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--kb-mute);
+  cursor: pointer;
+}
+
+.kbc-attach[data-error] {
+  border-color: rgba(255, 106, 43, 0.55);
+  color: var(--kb-signal-text);
+}
+
+/* Меню «/» над композером (DarkCommands): слева меню на ширину ленты, справа — превью
+   поверх правой колонки; высота — до верха экрана, список прокручивается внутри. */
+.kbc-slashpop {
+  position: absolute;
+  left: -1px;
+  bottom: calc(100% + 10px);
+  z-index: 30;
+  width: var(--kbc-slash-width, 100%);
+  max-height: var(--kbc-slash-room, 60vh);
+  display: flex;
+  flex-direction: column;
+}
+
+/* The preview stands over the right column, which comes later in the page. */
+.kbc-main:has(.kbc-slashpop) {
+  position: relative;
+  z-index: 40;
+}
+
+.kbc-slashpop .kbm-wrap {
+  min-height: 0;
+  max-height: inherit;
+}
+
+.kbc-slashpop[data-layout='side'] .kbm-wrap {
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.kbc-slashpop .kbm-menu-col {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: var(--kbc-slash-room, 60vh);
+}
+
+.kbc-slashpop .kbm-menu {
+  min-height: 0;
+  max-height: var(--kbc-slash-room, 60vh);
+}
+
+.kbc-slashpop .kbm-list {
+  flex: 0 1 auto;
+  min-height: 96px;
+  max-height: 420px;
+}
+
+.kbc-slashpop[data-layout='side'] .kbm-preview {
+  flex: 0 0 var(--kbc-slash-side);
+  max-height: var(--kbc-slash-room, 60vh);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Narrow (phone, or no right column): one sheet — the list on top, the preview of the
+   highlighted command under a divider, both inside one frame that ends above the composer.
+   The list scrolls in its part, the preview in its own; no strip of the feed between them. */
+.kbc-slashpop[data-layout='stack'] .kbm-wrap {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0;
+  max-height: var(--kbc-slash-room, 60vh);
+  overflow: hidden;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.05) inset, 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.kbc-slashpop[data-layout='stack'] .kbm-menu-col {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.kbc-slashpop[data-layout='stack'] .kbm-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.kbc-slashpop[data-layout='stack'] .kbm-list {
+  flex: 1 1 auto;
+  min-height: 96px;
+  max-height: none;
+  overscroll-behavior: contain;
+}
+
+.kbc-slashpop[data-layout='stack'] .kbm-foot {
+  border-radius: 0;
+}
+
+/* One sheet, one bezel corner (top-left of the list): the inner seams carry none. */
+.kbc-slashpop[data-layout='stack'] .kbm-menu.kb-bz::after,
+.kbc-slashpop[data-layout='stack'] .kbm-preview.kb-bz::before,
+.kbc-slashpop[data-layout='stack'] .kbm-preview.kb-bz::after {
+  display: none;
+}
+
+.kbc-slashpop[data-layout='stack'] .kbm-menu.kb-bz::before {
+  top: 0;
+  left: 0;
+}
+
+.kbc-slashpop[data-layout='stack'] .kbm-preview {
+  /* Keeps its share (up to ~half of the room): the list above gives way and scrolls. */
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: calc(var(--kbc-slash-room, 60vh) * 0.46);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  background: #171613;
+  border: none;
+  border-top: 1px solid rgba(255, 236, 210, 0.1);
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+/* Phone: the four prefixes in one row that scrolls sideways, without the caption. */
+.kbc-pcomposer .kbc-ctop {
+  padding: 8px 10px;
+}
+
+.kbc-pcomposer .kbm-prefixes {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.kbc-pcomposer .kbm-prefixes > .kbm-cap {
+  display: none;
+}
+
+.kbc-pcomposer .kbm-prefixes > [role='group'] {
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.kbc-pcomposer .kbm-prefix {
+  flex-shrink: 0;
+}
+
+/* Всплывающие меню композера («/», @-файлы, модель) */
+
+/* The server cut a big project's tree (X-File-Tree-Truncated): say so under the @-list. */
+.kbc-mentions-note {
+  margin: 4px 6px 2px;
+  padding: 8px 4px 4px;
+  border-top: 1px solid var(--kb-line-soft);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--kb-sand);
+  text-wrap: pretty;
+}
+
+.kbc-slash,
+.kbc-mentions {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: calc(100% + 8px);
+  z-index: 30;
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--kb-panel-3);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+.kbc-slash-row {
+  min-height: 40px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  text-align: left;
+  color: var(--kb-soft);
+  cursor: pointer;
+}
+
+.kbc-slash-row[data-active] {
+  background: #24221e;
+  color: var(--kb-text);
+}
+
+.kbc-slash-name {
+  flex: none;
+  font-size: 12px;
+  color: var(--kb-signal-text);
+}
+
+.kbc-slash-args {
+  flex: none;
+  font-size: 11px;
+  color: var(--kb-mute);
+}
+
+.kbc-slash-desc {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-slash-group {
+  flex: none;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--kb-mute);
+}
+
+.kbc-slash-empty {
+  padding: 10px;
+  font-size: 13px;
+  color: var(--kb-mute);
+}
+
+/* Очередь: список над строкой состояния, раскрывается чипом «очередь · N» */
+
+.kbc-qpop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 30;
+  max-height: min(360px, calc(var(--kb-vv-height, 100dvh) * 0.45));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 4px 2px;
+  background: var(--kb-panel-3);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.04) inset, 0 18px 44px rgba(0, 0, 0, 0.55);
+}
+
+.kbc-queue {
+  display: flex;
+  flex-direction: column;
+}
+
+.kbc-queue-head {
+  position: sticky;
+  top: -4px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  margin: -4px -4px 4px;
+  padding: 0 4px 0 12px;
+  background: var(--kb-panel-3);
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.kbc-queue-cap {
+  margin: 0;
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--kb-soft);
+}
+
+.kbc-queue-note {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-queue-head .kbc-queue-close {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  margin-left: auto;
+  border-radius: 4px;
+  color: var(--kb-mute);
+}
+
+.kbc-queue[data-phone] .kbc-queue-close {
+  width: 40px;
+  height: 40px;
+}
+
+.kbc-queue-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.kbc-queue[data-phone] .kbc-qrow {
+  gap: 2px;
+  min-height: 48px;
+  padding: 0;
+}
+
+.kbc-queue[data-phone] .kbc-grip {
+  width: 32px;
+  height: 44px;
+}
+
+.kbc-queue[data-phone] .kbc-qrow .kbc-ib {
+  width: 44px;
+  height: 44px;
+}
+
+.kbc-queue[data-phone] .kbc-qn {
+  width: 22px;
+}
+
+.kbc-queue[data-phone] .kbc-qtext,
+.kbc-queue[data-phone] .kbc-qedit {
+  font-size: 16px;
+}
+
+.kbc-qrow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 0 4px;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.kbc-qrow:hover {
+  background-color: var(--kb-row-hover);
+}
+
+.kbc-qrow[data-drop] {
+  box-shadow: inset 0 2px 0 var(--kb-signal);
+}
+
+.kbc-grip {
+  width: 28px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--kb-mute);
+  cursor: grab;
+  touch-action: none;
+}
+
+.kbc-grip:active {
+  cursor: grabbing;
+}
+
+.kbc-qn {
+  width: 24px;
+  flex: none;
+  font-size: 10.5px;
+  color: var(--kb-signal-text);
+}
+
+.kbc-qtext {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-qedit {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  background: var(--kb-bg);
+  border: 1px solid rgba(255, 106, 43, 0.55);
+  border-radius: 4px;
+  color: var(--kb-text);
+  font-size: 14px;
+  outline: none;
+}
+
+.kbc-qrow .kbc-ib {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  color: var(--kb-mute);
+}
+
+.kbc-qempty {
+  padding: 12px 4px;
+  font-size: 13px;
+  color: var(--kb-mute);
+}
+
+/* ------------------------------------------------------- правая колонка */
+
+.kbc-ptabs {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: rgba(255, 236, 210, 0.08);
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.kbc-ptab {
+  min-height: 44px;
+  flex-direction: row;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.kbc-ptab[aria-pressed='true'] {
+  color: var(--kb-text) !important;
+}
+
+.kbc-ptab-meta {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+.kbc-ptab[aria-pressed='true'] .kbc-ptab-meta {
+  color: var(--kb-signal-text);
+}
+
+@keyframes kbc-slidein {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.kbc-slidein {
+  animation: kbc-slidein 0.35s var(--kb-ease-out) both;
+}
+
+.kbc-ctx {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 18px 16px 96px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.kbc-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kbc-sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kbc-sec-toggle {
+  margin-left: -6px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--kb-head);
+}
+
+.kbc-sec-toggle:hover {
+  color: var(--kb-signal-text);
+}
+
+.kbc-sec-toggle .kbc-chev {
+  transform: rotate(-90deg);
+}
+
+.kbc-sec-toggle[aria-expanded='true'] .kbc-chev {
+  transform: none;
+}
+
+.kbc-h {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-head);
+}
+
+.kbc-sub {
+  font-size: 10.5px;
+  color: var(--kb-soft);
+}
+
+.kbc-big {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.kbc-big-n {
+  font-size: 48px;
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.kbc-big-n > span {
+  font-size: 24px;
+  color: var(--kb-soft);
+}
+
+.kbc-big-note {
+  font-size: 13px;
+  color: var(--kb-soft);
+}
+
+.kbc-bar {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 2px;
+  overflow: hidden;
+  padding: 1px;
+}
+
+.kbc-bar > span {
+  flex: none;
+  height: 100%;
+  transform-origin: left center;
+  animation: kbc-grow 1.1s var(--kb-ease-dial) 0.3s both;
+}
+
+@keyframes kbc-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.kbc-scale {
+  position: relative;
+  height: 6px;
+  border-right: 1px solid rgba(255, 236, 210, 0.35);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 236, 210, 0.35) 0 1px, transparent 1px 25%) left top / 100% 6px no-repeat,
+    repeating-linear-gradient(90deg, rgba(255, 236, 210, 0.14) 0 1px, transparent 1px 5%) left top / 100% 3px no-repeat;
+}
+
+.kbc-scale-mark {
+  position: absolute;
+  top: -1px;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 6px solid var(--kb-signal);
+  transform: translateX(-4px);
+}
+
+.kbc-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--kb-mute);
+}
+
+.kbc-scale-labels > span:last-child {
+  color: var(--kb-signal-text);
+}
+
+.kbc-crows {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -6px;
+}
+
+.kbc-crow {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  text-align: left;
+  color: var(--kb-text);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button.kbc-crow {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+button.kbc-crow:hover,
+a.kbc-crow:hover {
+  background-color: #201e1a;
+}
+
+.kbc-swatch {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 1px;
+}
+
+.kbc-crow-label {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.kbc-crow-label > span:first-child {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+button.kbc-crow .kbc-crow-label > span:first-child {
+  text-decoration: underline dotted rgba(255, 236, 210, 0.35);
+  text-underline-offset: 3px;
+}
+
+button.kbc-crow .kbc-chev {
+  transform: none;
+}
+
+button.kbc-crow[aria-expanded='true'] .kbc-chev {
+  transform: rotate(90deg);
+}
+
+.kbc-num {
+  width: 46px;
+  flex: none;
+  text-align: right;
+  font-size: 11px;
+  color: var(--kb-soft);
+}
+
+.kbc-num[data-strong] {
+  color: var(--kb-text);
+}
+
+.kbc-csub {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 26px;
+}
+
+.kbc-csub-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-csub-bar {
+  width: 52px;
+  height: 3px;
+  flex: none;
+  background: #2a2723;
+  overflow: hidden;
+}
+
+.kbc-csub-bar > span {
+  display: block;
+  height: 100%;
+}
+
+.kbc-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kb-line-soft);
+}
+
+.kbc-dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 9px 12px;
+  font-size: 13px;
+}
+
+.kbc-dl dt {
+  color: var(--kb-mute);
+}
+
+.kbc-dl dd {
+  margin: 0;
+  text-align: right;
+  font-size: 11px;
+}
+
+.kbc-dl dd span {
+  color: var(--kb-mute);
+}
+
+.kbc-file {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  color: var(--kb-text);
+}
+
+.kbc-file-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-file-name > span {
+  color: var(--kb-mute);
+}
+
+.kbc-empty {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+  text-wrap: pretty;
+}
+
+.kbc-empty-retry {
+  min-height: 28px;
+  padding: 0 10px;
+  margin-left: 4px;
+  background: transparent;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--kb-soft);
+  cursor: pointer;
+}
+
+.kbc-empty-retry:hover {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+/* Панель артефакта */
+
+.kbc-art {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+.kbc-art-bar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 8px 10px;
+  border-bottom: 1px solid rgba(255, 236, 210, 0.08);
+}
+
+.kbc-art-pick {
+  min-width: 0;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--kb-text);
+}
+
+.kbc-art-pick:hover {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kbc-art-pick > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-art-pick .kbc-chev {
+  transform: none;
+}
+
+.kbc-art-pick[aria-expanded='true'] .kbc-chev {
+  transform: rotate(180deg);
+}
+
+.kbc-art-menu {
+  left: 8px;
+  top: 52px;
+  z-index: 6;
+  width: 300px;
+  max-width: calc(100% - 16px);
+}
+
+.kbc-art-menu .kbc-menu-item {
+  min-height: 44px;
+}
+
+.kbc-art-menu-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kbc-art-menu-text > span:first-child {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-art-menu-text > span:last-child {
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.kbc-art-ib {
+  width: 40px;
+  height: 40px;
+}
+
+.kbc-art-ib[aria-pressed='true'] {
+  background: rgba(255, 106, 43, 0.14);
+  color: var(--kb-signal-text);
+}
+
+.kbc-share {
+  min-height: 36px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 12px;
+  background: var(--kb-signal);
+  color: var(--kb-bg) !important;
+  border: none;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease-out, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.kbc-share:hover {
+  background-color: var(--kb-signal-hover);
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.18);
+}
+
+.kbc-share:active {
+  transform: scale(0.96);
+}
+
+.kbc-art-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+}
+
+.kbc-art-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.kbc-art-h {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+  text-wrap: balance;
+}
+
+.kbc-art-frame {
+  flex: 1 1 auto;
+  min-height: 320px;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  /* The white page background stays inside the frame: under the translucent border it
+     read as a bright white outline, unlike every other muted frame of the Kabina. */
+  background-clip: padding-box;
+  border: 1px solid rgba(255, 236, 210, 0.1);
+  border-radius: 6px;
+}
+
+.kbc-art-frame[data-loading] {
+  background: var(--kb-panel-2);
+}
+
+.kbc-comment-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: rgba(255, 106, 43, 0.06);
+  border: 1px dashed rgba(255, 106, 43, 0.45);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--kb-soft);
+}
+
+.kbc-screens {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ------------------------------------------------------- вкладки авторов */
+
+.kbc-tool-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 8px;
+}
+
+/* ================================================================ ТЕЛЕФОН */
+
+.kbc-phone {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kbc-phead {
+  flex: none;
+  height: 52px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px 0 4px;
+  border-bottom: 1px solid var(--kb-line);
+  background: rgba(18, 17, 15, 0.9);
+}
+
+/* The bell sits 4px from the top and the right edge of a 52px bar that clips (.kbc-phone):
+   the badge's usual -6px offset cut its top and right side off. */
+.kbc-phead .kb-bell-badge {
+  top: -3px;
+  right: -3px;
+}
+
+.kbc-pback {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--kb-text);
+}
+
+.kbc-phone .kbc-proj-mark {
+  width: 36px;
+  height: 36px;
+  font-size: 15px;
+}
+
+.kbc-ptitle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kbc-ptitle h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ChatLayoutB-Phone: project mark, «САЙТ КЛИЕНТА · 7 ДИАЛОГОВ» over the dialog title, chevron. */
+.kbc-ptitle {
+  height: 44px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 0 4px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--kb-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.kbc-ptitle:active {
+  background-color: var(--kb-row-hover);
+}
+
+.kbc-phone .kbc-ptitle .kbc-proj-mark {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.kbc-ptitle-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kbc-ptitle-cap {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-ptitle .kbc-chev {
+  flex: none;
+  color: var(--kb-mute);
+  transition: transform 0.2s ease;
+}
+
+.kbc-ptitle[aria-expanded='true'] .kbc-chev {
+  transform: rotate(180deg);
+}
+
+/* The header and the HUD row stay above the full-screen artifact. */
+.kbc-ptop {
+  position: relative;
+  z-index: 61;
+  flex: none;
+  background: var(--kb-bg);
+}
+
+.kbc-ctxbtn {
+  flex: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 8px;
+  background: transparent;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--kb-text);
+  font-size: 13px;
+}
+
+.kbc-ctxbtn[aria-expanded='true'] {
+  background: rgba(255, 106, 43, 0.14);
+  border-color: rgba(255, 106, 43, 0.55);
+}
+
+.kbc-phone .kbc-log {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 24px);
+}
+
+.kbc-phone .kbc-feed {
+  gap: 20px;
+  padding: 24px 12px 14px;
+}
+
+.kbc-phone .kbc-you {
+  padding: 12px 14px;
+}
+
+.kbc-phone .kbc-tools {
+  width: 100%;
+  min-height: 44px;
+}
+
+.kbc-phone .kbc-tools-sum {
+  flex: 1;
+  font-size: 11px;
+}
+
+.kbc-phone .kbc-steps {
+  padding: 2px 0 2px 12px;
+}
+
+.kbc-phone .kbc-step-row {
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  padding: 7px 0;
+  font-size: 11px;
+  border-bottom: 1px solid rgba(255, 236, 210, 0.05);
+}
+
+.kbc-phone .kbc-step-tool {
+  flex: 1;
+  width: auto;
+}
+
+.kbc-phone .kbc-step-arg {
+  order: 3;
+  flex: 1 1 100%;
+  padding-left: 36px;
+}
+
+.kbc-phone .kbc-step-detail {
+  margin-left: 0;
+}
+
+.kbc-partcard {
+  width: 100%;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--kb-text);
+}
+
+.kbc-partcard:active {
+  background-color: var(--kb-row-hover);
+}
+
+.kbc-partcard .kbc-art-ico {
+  width: 42px;
+  height: 42px;
+}
+
+.kbc-partcard .kbc-art-title {
+  font-size: 15px;
+}
+
+.kbc-partcard-open {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--kb-signal-text);
+}
+
+.kbc-phone .kbc-decision {
+  border-radius: 8px;
+}
+
+.kbc-phone .kbc-decision-body {
+  gap: 12px;
+  padding: 14px;
+}
+
+.kbc-phone .kbc-cmdline {
+  padding: 10px 12px;
+  font-size: 11.5px;
+}
+
+.kbc-pdecide-main {
+  min-height: 52px !important;
+  font-size: 15px !important;
+  border-radius: 6px !important;
+}
+
+.kbc-pdecide-row {
+  display: flex;
+  gap: 8px;
+}
+
+.kbc-pdecide-row .kb-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.kbc-pdecide-row .kb-btn:first-child {
+  flex-grow: 1.3;
+}
+
+.kbc-pcomposer {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--kb-line-soft);
+  background: rgba(18, 17, 15, 0.92);
+}
+
+.kbc-phone .kbc-composer {
+  border-radius: 22px;
+  box-shadow: none;
+}
+
+.kbc-phone .kbc-composer:focus-within {
+  box-shadow: 0 0 0 3px rgba(255, 106, 43, 0.08);
+}
+
+/* The one line: clip · field · mic · send, bottoms aligned so a growing field keeps the
+   buttons by the thumb. */
+.kbc-pline {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 3px;
+}
+
+.kbc-pline .kbc-input-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* One line by default; the authors' autosize grows it, five lines at most, then it scrolls. */
+.kbc-phone .kbc-textarea {
+  min-height: 40px;
+  max-height: 126px;
+  padding: 9px 4px 9px 2px;
+  font-size: 16px;
+  line-height: 22px;
+  overflow-y: auto;
+}
+
+.kbc-pclip.kbc-ib {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.kbc-pmic {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--kb-signal-text);
+  cursor: pointer;
+  transition-property: transform, background-color;
+  transition-duration: 0.15s;
+  transition-timing-function: ease-out;
+}
+
+.kbc-pmic:active {
+  transform: scale(0.92);
+  background: rgba(255, 106, 43, 0.12);
+}
+
+/* Round send: an orange disc with the arrow (or the queue lines after the turn). */
+.kbc-send.kbc-psend {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  flex: none;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.kbc-send.kbc-psend[aria-disabled='true'] {
+  background: rgba(255, 106, 43, 0.14);
+  color: var(--kb-signal-text);
+}
+
+/* Narrow phones: the context button keeps its ring and percent, the word goes — the dialog
+   title gets the room (the bell sits beside it now). */
+@media (max-width: 420px) {
+  .kbc-ctxbtn > span:not(.kb-m) {
+    display: none;
+  }
+}
+
+.kbc-send.kbc-psend:hover {
+  box-shadow: none;
+}
+
+.kbc-pvoice {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin: -7px -4px -7px 0;
+}
+
+.kbc-pvoice svg.kbc-ring {
+  position: absolute;
+  inset: 0;
+}
+
+.kbc-pvoice button {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: none;
+  background: var(--kb-signal);
+  color: var(--kb-bg);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(255, 140, 90, 0.7), 0 10px 36px rgba(255, 106, 43, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.kbc-pvoice button:active {
+  transform: scale(0.94);
+}
+
+/* Шторка «Контекст» */
+
+.kbc-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.kbc-sheet-body .kbc-big-n {
+  font-size: 52px;
+}
+
+.kbc-sheet-body .kbc-big-n > span {
+  font-size: 26px;
+}
+
+.kbc-sheet-body .kbc-big-note {
+  font-size: 14px;
+}
+
+.kbc-sheet-body .kbc-bar {
+  height: 12px;
+}
+
+.kbc-sheet-body .kbc-crows {
+  margin: 0 -8px;
+}
+
+.kbc-sheet-body .kbc-crow {
+  min-height: 44px;
+  padding: 0 8px;
+}
+
+.kbc-sheet-body .kbc-crow-label {
+  font-size: 14px;
+}
+
+.kbc-sheet-body button.kbc-crow .kbc-crow-label > span:first-child {
+  text-decoration: none;
+}
+
+.kbc-sheet-body .kbc-num {
+  width: 48px;
+}
+
+.kbc-sheet-body .kbc-csub {
+  min-height: 30px;
+  padding: 0 8px 0 28px;
+}
+
+.kbc-sheet-body .kbc-csub-bar {
+  width: 56px;
+}
+
+.kbc-perm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  background: var(--kb-bg);
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 6px;
+}
+
+.kbc-perm-grid > button {
+  min-height: 44px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--kb-soft);
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.kbc-perm-grid > button[aria-pressed='true'] {
+  background: rgba(255, 106, 43, 0.14);
+  color: var(--kb-signal-text);
+}
+
+.kbc-pmodel {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--kb-text);
+}
+
+/* The chevron turns up while the model list is open under the button, like every other drop. */
+.kbc-pmodel > svg {
+  flex: none;
+  color: var(--kb-mute);
+  transition: transform 0.2s ease;
+}
+
+.kbc-pmodel[aria-expanded='true'] > svg {
+  transform: rotate(180deg);
+}
+
+.kbc-sheet-body .kbc-dl {
+  gap: 10px 12px;
+  font-size: 14px;
+}
+
+.kbc-sheet-body .kbc-dl dd {
+  font-size: 11.5px;
+}
+
+.kbc-sheet-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kbc-sheet-foot .kb-btn {
+  min-height: 52px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+/* Артефакт на весь экран (телефон) */
+
+@keyframes kbc-zoomin {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.kbc-pfull {
+  position: fixed;
+  inset: 0;
+  /* Pinned to the visible area (iOS keyboard, useVisualViewportFrame) and opened under the
+     chat header and its HUD row, which stay in view (ChatLayoutB-Phone). */
+  top: calc(var(--kb-vv-top, 0px) + var(--kb-hud-clear, 0px));
+  bottom: auto;
+  height: calc(var(--kb-vv-height, 100%) - var(--kb-hud-clear, 0px));
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--kb-bg);
+  background-image:
+    linear-gradient(rgba(255, 236, 210, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 236, 210, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px;
+  animation: kbc-zoomin 0.32s var(--kb-ease-dial) both;
+}
+
+.kbc-pfull-bar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 8px 6px;
+  border-bottom: 1px solid var(--kb-line);
+}
+
+.kbc-pfull-pick {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--kb-text);
+}
+
+.kbc-pfull-pick > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kbc-pfull-pick > span > span:first-child {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kbc-pfull-pick > span > span:last-child {
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-pfull-pick .kbc-chev {
+  transform: none;
+}
+
+.kbc-pfull-pick[aria-expanded='true'] .kbc-chev {
+  transform: rotate(180deg);
+}
+
+.kbc-pfull .kbc-art-menu {
+  left: 8px;
+  right: 8px;
+  top: 62px;
+  width: auto;
+  max-width: none;
+  border-radius: 8px;
+}
+
+.kbc-pfull .kbc-art-menu .kbc-menu-item {
+  min-height: 52px;
+}
+
+.kbc-pfull-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 16px 24px;
+}
+
+.kbc-pfull-body .kbc-art-h {
+  font-size: 26px;
+  line-height: 1.05;
+}
+
+.kbc-pfull-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--kb-line);
+  background: rgba(18, 17, 15, 0.94);
+}
+
+.kbc-pfull-foot .kb-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 52px;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* 390 px: «Комментировать» keeps its padding — the icon gives way, not the word. */
+@media (max-width: 420px) {
+  .kbc-pfull-comment > svg {
+    display: none;
+  }
+}
+
+/* A small text link in a mono caption («claude.ai»), with a 44 px target around it. */
+.kbc-hit-link {
+  position: relative;
+  color: var(--kb-signal-text);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 138, 85, 0.4);
+  text-underline-offset: 3px;
+}
+
+.kbc-hit-link::after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kbc-slidein,
+  .kbc-pfull,
+  .kbc-bar > span {
+    animation: none !important;
+  }
+}
+
+/* Keyboard up (useVisualViewportFrame): the keys cover the home indicator, no inset needed. */
+html[data-kb-keyboard] .kbc-pcomposer {
+  padding-bottom: 6px;
+}
+
+/* ------------------------------------------------- навигатор: проекты и диалоги */
+
+/* The popover under the crumbs / above the HUD: search, tabs, list, keys. */
+.kbn-pop {
+  width: min(520px, calc(100vw - 24px));
+  height: min(640px, calc(var(--kb-vv-height, 100vh) - 150px));
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.kbn {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.kbn-search {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 0 14px 0 16px;
+  border-bottom: 1px solid var(--kb-line-soft);
+  transition: border-color 0.2s ease;
+}
+
+.kbn-search:focus-within {
+  border-bottom-color: rgba(255, 106, 43, 0.38);
+}
+
+.kbn-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--kb-text);
+}
+
+.kbn-search input::placeholder {
+  color: var(--kb-mute);
+}
+
+.kbn-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.kbn-clear {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--kb-mute);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.kbn-clear:hover {
+  color: var(--kb-text);
+  border-color: var(--kb-line-btn);
+}
+
+.kbn-tabs {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.kbn-tab {
+  position: relative;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: transparent;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--kb-mute);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.kbn-tab::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--kb-signal);
+  opacity: 0;
+  transform: scaleX(0.6);
+  transition: opacity 0.18s ease, transform 0.22s var(--kb-ease-out);
+}
+
+.kbn-tab:hover {
+  color: var(--kb-soft);
+}
+
+.kbn-tab[aria-selected='true'] {
+  color: var(--kb-text);
+}
+
+.kbn-tab[aria-selected='true']::after {
+  opacity: 1;
+  transform: none;
+}
+
+.kbn-tab:focus-visible {
+  outline: 1px solid rgba(255, 106, 43, 0.6);
+  outline-offset: -4px;
+  border-radius: 6px;
+}
+
+.kbn-tab-meta {
+  font-size: 10.5px;
+  color: var(--kb-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.kbn-tab[aria-selected='true'] .kbn-tab-meta {
+  color: var(--kb-signal-text);
+}
+
+.kbn-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 8px 12px;
+  scroll-padding: 34px 0 8px;
+}
+
+.kbn-ruler {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 12px 10px 6px;
+  background: var(--kb-panel);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--kb-mute);
+}
+
+.kbn-ruler-n {
+  letter-spacing: 0.06em;
+  color: var(--kb-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.kbn-row-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.kbn-row-wrap[data-depth='1'] {
+  padding-left: 24px;
+}
+
+/* The unfolded project's dialogs hang off a thin guide under its mark. */
+.kbn-row-wrap[data-depth='1']::before {
+  content: '';
+  position: absolute;
+  left: 22px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--kb-line-mid);
+}
+
+.kbn-row {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--kb-soft);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.kbn-row[data-active] {
+  background: #221f1b;
+  border-color: var(--kb-line-btn);
+  color: var(--kb-text);
+}
+
+.kbn-row[data-current] {
+  background: var(--kb-wait-bg);
+  border-color: rgba(255, 106, 43, 0.36);
+  color: var(--kb-text);
+}
+
+.kbn-row[data-current][data-active] {
+  border-color: rgba(255, 106, 43, 0.6);
+}
+
+.kbn-srow-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kbn-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.kbn-srow-text .kbn-title {
+  display: block;
+}
+
+.kbn-hl {
+  padding: 0;
+  background: transparent;
+  color: var(--kb-signal-text);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 138, 85, 0.45);
+  text-underline-offset: 4px;
+}
+
+.kbn-sub {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+.kbn-sub .kb-led {
+  width: 6px;
+  height: 6px;
+}
+
+.kbn-sub [data-tone='run'],
+.kbn-sub [data-tone='wait'] {
+  color: var(--kb-signal-text);
+}
+
+.kbn-big {
+  color: var(--kb-sand);
+}
+
+.kbn-time {
+  flex: none;
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.kbn-time[data-tone='run'],
+.kbn-time[data-tone='wait'],
+.kbn-row[data-current] .kbn-time {
+  color: var(--kb-signal-text);
+}
+
+.kbn-new {
+  color: var(--kb-text);
+}
+
+.kbn-new svg {
+  flex: none;
+  color: var(--kb-signal);
+}
+
+.kbn-mark {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--kb-panel-2);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--kb-soft);
+}
+
+.kbn-mark[data-status='run'],
+.kbn-mark[data-status='wait'] {
+  border-color: rgba(255, 106, 43, 0.45);
+  color: var(--kb-signal);
+}
+
+.kbn-here {
+  flex: none;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 106, 43, 0.4);
+  border-radius: 3px;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  color: var(--kb-signal-text);
+}
+
+.kbn-prow .kbn-srow-text .kbn-title {
+  display: flex;
+}
+
+.kbn-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbn-chev {
+  flex: none;
+  color: var(--kb-mute);
+  transition: transform 0.2s var(--kb-ease-out), color 0.15s ease;
+}
+
+.kbn-prow[data-expanded] .kbn-chev {
+  transform: rotate(90deg);
+  color: var(--kb-signal-text);
+}
+
+.kbn-more,
+.kbn-loading {
+  min-height: 34px;
+  padding-left: 28px;
+  font-size: 11px;
+  color: var(--kb-soft);
+}
+
+.kbn-loading {
+  cursor: default;
+  color: var(--kb-mute);
+}
+
+.kbn-restore {
+  flex: none;
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--kb-signal-text);
+}
+
+.kbn-row[data-archived] .kbn-title {
+  color: var(--kb-mute);
+}
+
+.kbn-dots {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  margin-top: -16px;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--kb-mute);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.kbn-row-wrap:hover .kbn-dots,
+.kbn-row[data-active] + .kbn-dots,
+.kbn-dots[aria-expanded='true'],
+.kbn-dots:focus-visible {
+  opacity: 1;
+}
+
+.kbn-dots:hover {
+  border-color: rgba(255, 106, 43, 0.5);
+  color: var(--kb-signal-text);
+}
+
+/* The «⋯» takes the place of the time while it shows (no jump of the row). */
+.kbn-row-wrap[data-manage]:hover .kbn-time,
+.kbn-row-wrap[data-manage] .kbn-row[data-active] .kbn-time,
+.kbn-row-wrap[data-manage]:has(.kbn-dots[aria-expanded='true']) .kbn-time {
+  opacity: 0;
+}
+
+.kbn-menu {
+  right: 4px;
+  top: 38px;
+}
+
+.kbn-rename {
+  flex: 1 1 auto;
+  padding: 4px 4px 4px 10px;
+}
+
+.kbn-note {
+  margin: 0;
+  padding: 14px 10px 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+  text-wrap: pretty;
+}
+
+.kbn-note.kb-m {
+  font-size: 11px;
+}
+
+.kbn-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 8px 0 14px;
+  border-top: 1px solid var(--kb-line-soft);
+}
+
+.kbn-keys {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--kb-dim);
+  white-space: nowrap;
+}
+
+.kbn-keys .kb-kbd {
+  padding: 3px 5px;
+  font-size: 10px;
+}
+
+.kbn-all {
+  margin-left: auto;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  font-size: 12.5px;
+  color: var(--kb-soft);
+}
+
+/* Phone: the same navigator fills the sheet; its own list scrolls, search and tabs stay. */
+.kbn[data-phone] {
+  height: min(640px, calc(var(--kb-vv-height, 100vh) * 0.66));
+  margin: -16px -16px -20px;
+}
+
+.kbn[data-phone] .kbn-search {
+  min-height: 52px;
+  margin: 4px 12px 0;
+  padding: 0 6px 0 12px;
+  background: var(--kb-input);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 8px;
+}
+
+.kbn[data-phone] .kbn-search:focus-within {
+  border-color: rgba(255, 106, 43, 0.45);
+}
+
+.kbn[data-phone] .kbn-search input {
+  font-size: 16px;
+}
+
+.kbn[data-phone] .kbn-tabs {
+  margin-top: 6px;
+}
+
+.kbn[data-phone] .kbn-tab {
+  min-height: 46px;
+  font-size: 14px;
+}
+
+.kbn[data-phone] .kbn-list {
+  padding: 0 8px 16px;
+}
+
+.kbn[data-phone] .kbn-ruler {
+  padding-top: 14px;
+}
+
+.kbn[data-phone] .kbn-row {
+  min-height: 50px;
+}
+
+.kbn[data-phone] .kbn-more,
+.kbn[data-phone] .kbn-loading {
+  min-height: 44px;
+}
+
+.kbn[data-phone] .kbn-dots {
+  position: static;
+  margin-top: 0;
+  width: 40px;
+  height: 40px;
+  opacity: 1;
+}
+
+.kbn[data-phone] .kbn-row-wrap[data-manage] .kbn-time {
+  opacity: 1;
+}
+
+.kbn[data-phone] .kbn-row[data-active]:not([data-current]) {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Header crumbs of the chat: «// Проект // Диалог ⌄», both buttons. */
+.kbc-hcrumbs {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kbc-hcrumb {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 220px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  margin: 0 -8px;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--kb-text);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.kbc-hcrumb:hover,
+.kbc-hcrumb[aria-expanded='true'] {
+  color: var(--kb-signal-text);
+  border-color: var(--kb-line-btn);
+}
+
+.kbc-hcrumb:focus-visible,
+.kbc-htitle:focus-visible {
+  outline: 1px solid rgba(255, 106, 43, 0.7);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------- работа хода как в Claude Code:
+   субагент вложенной карточкой, план (TodoWrite) чек-листом, строка «✻ …», фон */
+
+.kbc-work-row {
+  gap: 8px;
+}
+
+/* Субагент: «● АГЕНТ описание   haiku ›» / «⎿ что делает» / «6 вызовов · 12k ток. · 42 с». */
+.kbc-agent {
+  align-self: stretch;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px 9px 10px;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line);
+  border-left: 2px solid var(--kb-line-strong);
+  border-radius: 5px;
+  transition-property: border-color, background-color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+}
+
+.kbc-agent[data-state='run'] {
+  border-left-color: var(--kb-signal);
+  background: linear-gradient(90deg, rgba(255, 106, 43, 0.05), transparent 46%), var(--kb-well);
+}
+
+.kbc-agent[data-state='done'] {
+  border-left-color: rgba(156, 196, 154, 0.55);
+}
+
+.kbc-agent[data-state='err'] {
+  border-left-color: #e9805e;
+}
+
+.kbc-agent-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 26px;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--kb-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.kbc-agent-head:disabled {
+  cursor: default;
+}
+
+.kbc-agent-head[aria-expanded='true'] .kbc-chev {
+  transform: rotate(90deg);
+}
+
+.kbc-agent-cap {
+  flex: none;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kbc-agent-name {
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-agent-type {
+  flex: none;
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+.kbc-agent-gap {
+  flex: 1 1 0;
+  min-width: 6px;
+}
+
+.kbc-agent-model {
+  flex: none;
+  font-size: 9.5px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 3px;
+  color: var(--kb-soft);
+  border: 1px solid rgba(255, 236, 210, 0.14);
+}
+
+.kbc-agent-model[data-family='opus'],
+.kbc-agent-model[data-family='fable'] {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.45);
+}
+
+.kbc-agent-model[data-family='sonnet'] {
+  color: var(--kb-text);
+  border-color: rgba(255, 236, 210, 0.22);
+}
+
+.kbc-agent-head .kbc-chev {
+  color: var(--kb-mute);
+}
+
+.kbc-agent-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-left: 2px;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.kbc-agent-elbow {
+  flex: none;
+  width: 12px;
+  color: var(--kb-sep);
+  transform: translateY(-1px);
+}
+
+.kbc-agent-lines {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.kbc-agent-now {
+  min-width: 0;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-agent[data-state='done'] .kbc-agent-now {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-wrap: pretty;
+}
+
+.kbc-agent-meta {
+  color: var(--kb-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.kbc-agent-steps {
+  margin-top: 4px;
+  margin-left: 6px;
+}
+
+/* An agent's calls name longer tools (Monitor, ToolSearch): a wider tool column. */
+.kbc-agent-steps .kbc-step-tool {
+  width: 76px;
+}
+
+/* План хода: «› ПЛАН 1/3» и строки ☐ ▸ ☑. */
+.kbc-todos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: stretch;
+  max-width: 100%;
+}
+
+.kbc-todos-count {
+  flex: none;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.kbc-todos-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px 0 2px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.kbc-todos > .kbc-todos-list {
+  margin-left: 15px;
+  border-left: 1px dashed rgba(255, 236, 210, 0.16);
+}
+
+.kbc-todo {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--kb-soft);
+}
+
+.kbc-todo-text {
+  min-width: 0;
+  text-wrap: pretty;
+}
+
+.kbc-todo[data-status='in_progress'] {
+  color: var(--kb-text);
+}
+
+.kbc-todo[data-status='in_progress'] .kbc-todo-text {
+  font-weight: 500;
+}
+
+.kbc-todo[data-status='completed'] {
+  color: var(--kb-mute);
+}
+
+.kbc-todo[data-status='completed'] .kbc-todo-text {
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 236, 210, 0.22);
+}
+
+/* ☐ empty box · ▸ lit box with an arrow · ☑ sage box with a check. */
+.kbc-todo-mark {
+  position: relative;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid rgba(255, 236, 210, 0.3);
+  border-radius: 2px;
+}
+
+.kbc-todo-mark[data-status='in_progress'] {
+  border-color: var(--kb-signal);
+  background: rgba(255, 106, 43, 0.16);
+}
+
+.kbc-todo-mark[data-status='in_progress']::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-left: 4px solid var(--kb-signal-text);
+  margin-left: 1px;
+}
+
+.kbc-todo-mark[data-live] {
+  animation: kb-breathe 1.8s ease-in-out infinite;
+}
+
+.kbc-todo-mark[data-status='completed'] {
+  border-color: rgba(156, 196, 154, 0.7);
+  background: rgba(156, 196, 154, 0.16);
+  color: var(--kb-sage);
+}
+
+/* Строка хода: «✻ Bash npm test… (12 с · ↓ 1.2k ток.)». */
+.kbc-sl-live {
+  flex: 0 1 auto;
+  gap: 7px;
+  font-size: 11.5px;
+  letter-spacing: 0.01em;
+}
+
+.kbc-sl-spin {
+  flex: none;
+  display: inline-block;
+  width: 12px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--kb-signal);
+  animation: kbc-spin 2.4s linear infinite;
+}
+
+.kbc-sl-live[data-tone='wait'] .kbc-sl-spin {
+  animation: kb-flash 1s steps(1, end) infinite;
+}
+
+@keyframes kbc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.kbc-sl-act {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--kb-text);
+}
+
+.kbc-sl-live[data-tone='wait'] .kbc-sl-act {
+  color: var(--kb-signal-text);
+}
+
+/* Телефон: ход идёт не здесь (терминал) — вместо действия причина, без сигнального цвета. */
+.kbc-sl-away .kbc-sl-spin {
+  color: var(--kb-mute);
+}
+
+.kbc-sl-away .kbc-sl-act {
+  color: var(--kb-sand);
+}
+
+.kbc-sl-meta {
+  flex: none;
+  color: var(--kb-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* «☐ 1/3 · ◇ фон 1 ›» — the plan and the background jobs, unfolding above the line. */
+.kbc-sl-work {
+  position: relative;
+  flex: none;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 10px;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 6px;
+  color: var(--kb-soft);
+  font-size: 12px;
+  cursor: pointer;
+  transition-property: background-color, border-color, transform;
+  transition-duration: 0.15s;
+  transition-timing-function: ease-out;
+}
+
+.kbc-sl-work:hover,
+.kbc-sl-work[aria-expanded='true'] {
+  background: var(--kb-panel-3);
+  border-color: rgba(255, 236, 210, 0.2);
+  color: var(--kb-text);
+}
+
+.kbc-sl-work:active {
+  transform: scale(0.96);
+}
+
+.kbc-sl-work .kbc-chev {
+  transition: transform 0.18s var(--kb-ease-out);
+}
+
+.kbc-sl-work[aria-expanded='true'] .kbc-chev {
+  transform: rotate(-90deg);
+}
+
+.kbc-sl-plan,
+.kbc-sl-bg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.kbc-sl-planbox {
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--kb-signal);
+  border-radius: 2px;
+  background: rgba(255, 106, 43, 0.16);
+}
+
+.kbc-sl-plan[data-done] .kbc-sl-planbox {
+  border-color: rgba(156, 196, 154, 0.7);
+  background: rgba(156, 196, 154, 0.2);
+}
+
+.kbc-sl-bgmark {
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  background: var(--kb-sand);
+  transform: rotate(45deg);
+}
+
+.kbc-workpop {
+  padding: 10px 12px 12px;
+}
+
+.kbc-work {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kbc-work-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.kbc-work-cap {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+}
+
+.kbc-work .kbc-todos-list {
+  padding-left: 0;
+}
+
+.kbc-bg-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kbc-bg {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11.5px;
+  color: var(--kb-soft);
+}
+
+.kbc-bg-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbc-bg-time {
+  flex: none;
+  color: var(--kb-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Phone: the activity shrinks first, the numbers go when there is no room. */
+.kbc-sline[data-phone] .kbc-sl-live {
+  gap: 6px;
+}
+
+.kbc-sline[data-phone] .kbc-sl-work {
+  min-height: 36px;
+  min-width: 44px;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 7px 0 9px;
+  border-radius: 18px;
+}
+
+@container (max-width: 370px) {
+  .kbc-sline .kbc-sl-meta {
+    display: none;
+  }
+}
+
+.kbc-phone .kbc-agent {
+  padding: 8px 10px 9px 9px;
+}
+
+.kbc-phone .kbc-todo {
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kbc-sl-spin,
+  .kbc-todo-mark[data-live] {
+    animation: none;
+  }
+}

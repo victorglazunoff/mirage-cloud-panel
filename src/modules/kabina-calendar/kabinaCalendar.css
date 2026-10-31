@@ -1,0 +1,1756 @@
+/*
+ * Экран «Календарь» Кабины.
+ * Значения — из макета без округлений; общие примитивы — kb-* из kabina.css.
+ */
+
+.kc-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  /* Каркас ставит 32px между шапкой и экраном, в макете — 24px. */
+  margin-top: -8px;
+}
+
+/* ------------------------------------------------------------ панель недели */
+
+.kc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+}
+
+.kc-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.kc-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* «Сегодня» сразу за заголовком и на одном месте в День / Неделя / Месяц:
+   заголовок держит ширину недели «26.10 — 01.11» (6,7 em шрифта заголовка). */
+.kc-screen:not([data-phone]) .kc-heading {
+  width: calc(clamp(28px, 3vw, 40px) * 6.75);
+}
+
+.kc-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--kb-mute);
+}
+
+.kc-title {
+  margin: 0;
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.kc-views .kb-segmented {
+  flex-wrap: nowrap;
+  padding: 2px;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line);
+  border-radius: 5px;
+}
+
+.kc-views .kb-seg {
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.kc-views .kb-seg[aria-checked='true'] {
+  box-shadow: none;
+}
+
+.kc-sync {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 6px 6px 14px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.kc-sync-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.kc-sync-main {
+  font-size: 13px;
+  color: var(--kb-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-sync-sub {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-sync .kb-ib {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  color: var(--kb-soft);
+}
+
+.kc-sync .kb-ib[aria-busy='true'] svg {
+  animation: kc-spin 1s linear infinite;
+}
+
+@keyframes kc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ----------------------------------------------------------- быстрое добавление */
+
+.kc-qa-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kc-qa {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 6px 6px 6px 16px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 6px;
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.04) inset;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kc-qa:focus-within {
+  border-color: rgba(255, 106, 43, 0.55);
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.08), 0 14px 36px rgba(0, 0, 0, 0.4);
+}
+
+.kc-qa-input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--kb-text);
+  font-size: 15px;
+}
+
+.kc-qa-input:focus-visible {
+  outline: none;
+}
+
+.kc-mic {
+  width: 44px;
+  height: 44px;
+  border-radius: 5px;
+  border-color: var(--kb-line-btn);
+}
+
+.kc-add {
+  flex: none;
+  min-height: 44px;
+  gap: 10px;
+  padding: 0 16px 0 18px;
+  font-size: 14px;
+}
+
+.kc-add-key {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.kc-preview {
+  min-height: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 0 2px;
+  font-size: 13px;
+  color: var(--kb-soft);
+}
+
+.kc-tag-label {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+  margin-right: 4px;
+}
+
+.kc-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 3px;
+}
+
+.kc-tag[data-strong] {
+  color: var(--kb-text);
+}
+
+.kc-tag[data-type] {
+  border-color: rgba(255, 106, 43, 0.4);
+  color: var(--kb-text);
+}
+
+.kc-tag[data-type] svg {
+  color: var(--kb-signal);
+}
+
+.kc-tag[data-guess] {
+  border-style: dashed;
+}
+
+.kc-tag-time {
+  font-size: 11.5px;
+}
+
+/* Тип в превью — кнопка: угаданный тип пунктиром, меню «Звонок / Сообщение / Встреча / Задача Claude». */
+.kc-typepick {
+  position: relative;
+  display: inline-flex;
+}
+
+.kc-tag-type {
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  transition-property: border-color, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.kc-tag-type:hover,
+.kc-tag-type[aria-expanded='true'] {
+  background-color: rgba(255, 106, 43, 0.08);
+  border-color: rgba(255, 106, 43, 0.7);
+}
+
+.kc-tag-hint {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: var(--kb-signal-text);
+}
+
+.kc-tag.kc-tag-type .kc-tag-chev {
+  color: var(--kb-mute);
+  transform: rotate(90deg);
+  transition: transform 150ms ease-out;
+}
+
+.kc-tag.kc-tag-type[aria-expanded='true'] .kc-tag-chev {
+  transform: rotate(-90deg);
+}
+
+.kc-typepick-menu {
+  left: 0;
+  right: auto;
+  min-width: 200px;
+}
+
+.kc-muted {
+  color: var(--kb-mute);
+}
+
+/* ---------------------------------------------------------------- фильтры */
+
+.kc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.kc-filter-label {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+  margin-right: 6px;
+}
+
+.kc-filter-sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 10px;
+  background: var(--kb-line-btn);
+}
+
+.kc-chip {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid var(--kb-line-mid);
+  color: var(--kb-soft);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.kc-chip:hover {
+  border-color: rgba(255, 106, 43, 0.5);
+  color: var(--kb-text);
+}
+
+.kc-chip[aria-pressed='true'] {
+  background: rgba(255, 106, 43, 0.1);
+  border-color: rgba(255, 106, 43, 0.45);
+  color: var(--kb-text);
+}
+
+.kc-chip[data-kind='type'][aria-pressed='false'] {
+  color: var(--kb-mute);
+}
+
+.kc-chip[data-dashed] {
+  border-style: dashed;
+}
+
+.kc-chip-icon {
+  display: grid;
+  color: var(--kb-mute);
+}
+
+.kc-chip[aria-pressed='true'] .kc-chip-icon {
+  color: var(--kb-signal);
+}
+
+.kc-chip[aria-pressed='true'][data-dashed] .kc-chip-icon {
+  color: var(--kb-soft);
+}
+
+.kc-chip-count {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+.kc-chip[aria-pressed='true'] .kc-chip-count {
+  color: var(--kb-soft);
+}
+
+/* ------------------------------------------------------------ сетка и панель */
+
+.kc-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.kc-main {
+  flex: 999 1 640px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  container: kc-main / inline-size;
+}
+
+.kc-aside {
+  flex: 1 1 360px;
+  min-width: 0;
+  max-width: 100%;
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Прокрутка вбок — только когда неделя (min 760px) правда не помещается: на широком экране дробная
+   ширина колонок (958,68 из 959) давала лишний 1px и полосу прокрутки под сеткой. Правило с
+   @container стоит ПОСЛЕ базового — у него та же специфичность, иначе базовое перебивает его. */
+.kc-board {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 236, 210, 0.18) transparent;
+}
+
+.kc-board-inner {
+  min-width: 760px;
+  /* Sub-pixel event edges must not make the board scroll sideways. */
+  overflow: clip;
+}
+
+@container kc-main (max-width: 763.98px) {
+  .kc-board[data-view='week'] {
+    overflow-x: auto;
+  }
+}
+
+.kc-board[data-view='day'] .kc-board-inner {
+  min-width: 0;
+}
+
+.kc-row {
+  display: grid;
+  grid-template-columns: 60px repeat(var(--kc-cols, 7), minmax(0, 1fr));
+}
+
+.kc-row-head {
+  height: 58px;
+  border-bottom: 1px solid var(--kb-line);
+}
+
+.kc-zone {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 9px;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--kb-mute);
+}
+
+.kc-dayhead {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0;
+  border: none;
+  border-left: 1px solid rgba(255, 236, 210, 0.06);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.kc-dayhead:hover {
+  background-color: var(--kb-hover);
+}
+
+.kc-dayhead[data-today] {
+  background: rgba(255, 106, 43, 0.08);
+}
+
+.kc-dayhead-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: transparent;
+}
+
+.kc-dayhead[data-today] .kc-dayhead-bar {
+  background: var(--kb-signal);
+}
+
+.kc-dayhead-w {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--kb-soft);
+}
+
+.kc-dayhead-n {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--kb-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.kc-dayhead-c {
+  font-size: 10px;
+  color: var(--kb-mute);
+  min-width: 0;
+}
+
+.kc-dayhead[data-weekend] .kc-dayhead-w {
+  color: var(--kb-mute);
+}
+
+.kc-dayhead[data-weekend] .kc-dayhead-n {
+  color: var(--kb-soft);
+}
+
+.kc-dayhead[data-today] .kc-dayhead-w,
+.kc-dayhead[data-today] .kc-dayhead-n {
+  color: var(--kb-signal);
+}
+
+.kc-dayhead[data-today] .kc-dayhead-c {
+  color: var(--kb-signal-text);
+}
+
+.kc-strip-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  color: var(--kb-mute);
+}
+
+.kc-row-early {
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.kc-row-late {
+  border-top: 1px solid var(--kb-line-soft);
+}
+
+.kc-strip {
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 5px 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-left: 1px solid rgba(255, 236, 210, 0.06);
+  min-width: 0;
+}
+
+.kc-col-today {
+  background: rgba(255, 106, 43, 0.03);
+}
+
+.kc-hours {
+  position: relative;
+  height: var(--kc-grid-h);
+}
+
+.kc-hours-scale {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  background:
+    repeating-linear-gradient(to bottom, rgba(255, 236, 210, 0.32) 0 1px, transparent 1px 44px) right top / 8px 100% no-repeat,
+    repeating-linear-gradient(to bottom, rgba(255, 236, 210, 0.13) 0 1px, transparent 1px 11px) right top / 4px 100% no-repeat;
+}
+
+.kc-hour {
+  position: absolute;
+  right: 13px;
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.kc-now-label {
+  position: absolute;
+  right: 9px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: var(--kb-signal);
+  color: var(--kb-bg);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.kc-col {
+  position: relative;
+  height: var(--kc-grid-h);
+  border-left: 1px solid rgba(255, 236, 210, 0.06);
+  background-image: repeating-linear-gradient(to bottom, rgba(255, 236, 210, 0.055) 0 1px, transparent 1px 44px);
+  min-width: 0;
+}
+
+.kc-col-today.kc-col {
+  background-color: rgba(255, 106, 43, 0.03);
+}
+
+.kc-past {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  background: repeating-linear-gradient(135deg, rgba(255, 236, 210, 0.03) 0 1px, transparent 1px 7px);
+  pointer-events: none;
+}
+
+.kc-nowline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 106, 43, 0.22);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.kc-nowline[data-today] {
+  height: 2px;
+  background: var(--kb-signal);
+  animation: kc-nowglow 2.4s ease-in-out infinite;
+}
+
+@keyframes kc-nowglow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(255, 106, 43, 0.55);
+  }
+
+  50% {
+    box-shadow: 0 0 12px rgba(255, 106, 43, 0.95);
+  }
+}
+
+/* ------------------------------------------------------------- событие */
+
+.kc-ev {
+  --kc-ev-bg: #1f1d1a;
+  --kc-ev-bc: rgba(255, 236, 210, 0.13);
+  --kc-ev-bs: solid;
+  --kc-ev-color: var(--kb-text);
+  --kc-ev-ic: var(--kb-soft);
+  --kc-ev-tc: var(--kb-mute);
+  --kc-ev-sub: var(--kb-mute);
+  box-sizing: border-box;
+  margin: 0;
+  background: var(--kc-ev-bg);
+  border: 1px var(--kc-ev-bs) var(--kc-ev-bc);
+  border-radius: 4px;
+  color: var(--kc-ev-color);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kc-ev:hover {
+  border-color: rgba(255, 106, 43, 0.6);
+}
+
+.kc-ev[data-type='agent_task'] {
+  --kc-ev-bg: rgba(255, 106, 43, 0.075);
+  --kc-ev-bc: rgba(255, 106, 43, 0.42);
+  --kc-ev-ic: var(--kb-signal);
+}
+
+.kc-ev[data-type='server_schedule'] {
+  --kc-ev-bg: transparent;
+  --kc-ev-bc: rgba(255, 236, 210, 0.2);
+  --kc-ev-bs: dashed;
+  --kc-ev-color: var(--kb-mute);
+  --kc-ev-ic: var(--kb-mute);
+}
+
+.kc-ev[data-next] {
+  --kc-ev-tc: var(--kb-signal-text);
+}
+
+.kc-ev[data-done] {
+  --kc-ev-bg: #181714;
+  --kc-ev-bc: rgba(255, 236, 210, 0.07);
+  --kc-ev-color: var(--kb-mute);
+  --kc-ev-ic: var(--kb-mute);
+  --kc-ev-tc: var(--kb-mute);
+}
+
+.kc-ev[data-draft] {
+  --kc-ev-bg: rgba(255, 106, 43, 0.05);
+  --kc-ev-bc: rgba(255, 106, 43, 0.75);
+  --kc-ev-bs: dashed;
+  --kc-ev-color: var(--kb-signal-text);
+  --kc-ev-ic: var(--kb-signal);
+  --kc-ev-tc: var(--kb-signal-text);
+}
+
+.kc-ev[aria-pressed='true'] {
+  --kc-ev-bg: rgba(255, 106, 43, 0.15);
+  --kc-ev-bc: var(--kb-signal);
+  --kc-ev-bs: solid;
+  --kc-ev-color: var(--kb-text);
+  --kc-ev-ic: var(--kb-signal);
+  --kc-ev-sub: var(--kb-soft);
+  box-shadow: 0 0 0 3px rgba(255, 106, 43, 0.16);
+}
+
+.kc-ev-grid {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+  padding: 0 6px;
+  z-index: 1;
+}
+
+.kc-ev-grid[data-long] {
+  padding: 3px 7px;
+}
+
+.kc-ev-grid[aria-pressed='true'] {
+  z-index: 3;
+}
+
+.kc-ev-pill {
+  position: relative;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 6px;
+  flex: none;
+}
+
+.kc-ev-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  height: 18px;
+}
+
+.kc-ev-ic {
+  flex: none;
+  display: grid;
+  color: var(--kc-ev-ic);
+}
+
+.kc-ev-range {
+  flex: 1;
+  min-width: 0;
+  font-size: 10px;
+  color: var(--kc-ev-tc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-ev-time {
+  flex: none;
+  font-size: 10px;
+}
+
+.kc-ev-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-ev-pill .kc-ev-title {
+  font-size: 11.5px;
+  line-height: normal;
+}
+
+.kc-ev-big {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-ev-sub {
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--kc-ev-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-ev[data-done] .kc-ev-title,
+.kc-ev[data-done] .kc-ev-big {
+  text-decoration: line-through;
+}
+
+.kc-warn {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-right: 2px;
+  border-radius: 1px;
+  background: var(--kb-sand);
+  transform: rotate(45deg);
+}
+
+/*
+ * Событие дольше суток — полоса через дни: на стыке с соседним днём край прямой,
+ * без рамки и уходит в край ячейки, а вместо рамки — затухание, «тянется оттуда».
+ */
+.kc-ev[data-from-prev],
+.kc-ev[data-to-next] {
+  --kc-ev-fade: rgba(255, 236, 210, 0.07);
+}
+
+.kc-ev[data-type='agent_task'][data-from-prev],
+.kc-ev[data-type='agent_task'][data-to-next],
+.kc-ev[aria-pressed='true'][data-from-prev],
+.kc-ev[aria-pressed='true'][data-to-next] {
+  --kc-ev-fade: rgba(255, 106, 43, 0.14);
+}
+
+.kc-ev-grid[data-from-prev] {
+  border-top-color: transparent;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  background-image: linear-gradient(to bottom, var(--kc-ev-fade), transparent 16px);
+}
+
+.kc-ev-grid[data-to-next] {
+  border-bottom-color: transparent;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background-image: linear-gradient(to top, var(--kc-ev-fade), transparent 16px);
+}
+
+.kc-ev-grid[data-from-prev][data-to-next] {
+  background-image:
+    linear-gradient(to bottom, var(--kc-ev-fade), transparent 16px),
+    linear-gradient(to top, var(--kc-ev-fade), transparent 16px);
+}
+
+/* Полоса многодневного события в сетке: узкий рельс у левого края колонки, название — вдоль него. */
+.kc-ev-rail {
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  overflow: hidden;
+}
+
+.kc-ev-rail-text {
+  flex: 1;
+  min-height: 0;
+  writing-mode: vertical-rl;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-ev-rail-span {
+  font-size: 9.5px;
+  color: var(--kc-ev-tc);
+}
+
+.kc-ev[data-done] .kc-ev-rail-text {
+  text-decoration: line-through;
+}
+
+.kc-ev-pill[data-from-prev] {
+  margin-left: calc(var(--kc-pill-gutter, 4px) * -1);
+  padding-left: calc(6px + var(--kc-pill-gutter, 4px));
+  border-left-color: transparent;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  background-image: linear-gradient(to right, var(--kc-ev-fade), transparent 14px);
+}
+
+.kc-ev-pill[data-to-next] {
+  margin-right: calc(var(--kc-pill-gutter, 4px) * -1);
+  border-right-color: transparent;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  background-image: linear-gradient(to left, var(--kc-ev-fade), transparent 14px);
+}
+
+.kc-ev-pill[data-from-prev][data-to-next] {
+  background-image:
+    linear-gradient(to right, var(--kc-ev-fade), transparent 14px),
+    linear-gradient(to left, var(--kc-ev-fade), transparent 14px);
+}
+
+.kc-strip {
+  --kc-pill-gutter: 3px;
+}
+
+/* ----------------------------------------------------------------- месяц */
+
+.kc-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.kc-month-w {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--kb-soft);
+  border-bottom: 1px solid var(--kb-line);
+}
+
+.kc-month-w:nth-child(n + 6) {
+  color: var(--kb-mute);
+}
+
+.kc-month-cell {
+  min-height: 118px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 4px 6px;
+  border-left: 1px solid rgba(255, 236, 210, 0.06);
+  border-bottom: 1px solid rgba(255, 236, 210, 0.06);
+  min-width: 0;
+}
+
+.kc-month-cell:nth-child(7n + 1) {
+  border-left: none;
+}
+
+/* «прошло» — та же штриховка, что у прошедших часов недели; соседний месяц — только приглушённое число. */
+.kc-month-cell[data-past] {
+  background: repeating-linear-gradient(135deg, rgba(255, 236, 210, 0.035) 0 1px, transparent 1px 7px);
+}
+
+.kc-month-cell[data-outside]:not([data-past]) {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.kc-month-cell[data-outside] .kc-month-n {
+  color: var(--kb-dim);
+}
+
+.kc-month-cell[data-today] {
+  background: rgba(255, 106, 43, 0.05);
+  box-shadow: inset 0 2px 0 var(--kb-signal);
+}
+
+.kc-month-day {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  padding: 0 4px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.kc-month-day:hover {
+  background: var(--kb-hover);
+}
+
+.kc-month-n {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--kb-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.kc-month-cell[data-today] .kc-month-n {
+  color: var(--kb-signal);
+}
+
+.kc-month-c {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.kc-month-more {
+  min-height: 22px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  text-align: left;
+  cursor: pointer;
+}
+
+.kc-month-more:hover {
+  color: var(--kb-signal-text);
+}
+
+/* ---------------------------------------------------------------- легенда */
+
+.kc-legend {
+  list-style: none;
+  margin: 0;
+  padding: 4px 2px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  font-size: 12px;
+  color: var(--kb-soft);
+}
+
+.kc-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kc-swatch {
+  width: 18px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* ----------------------------------------------------------- выбранное */
+
+.kc-sel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+}
+
+.kc-sel-empty {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kc-sel-top {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kc-sel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kc-sel-icon {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--kb-line-strong);
+  border-radius: 5px;
+  color: var(--kb-signal);
+}
+
+.kc-sel-icon[data-type='agent_task'] {
+  border-color: rgba(255, 106, 43, 0.45);
+}
+
+.kc-sel-icon[data-type='server_schedule'] {
+  border-style: dashed;
+  border-color: rgba(255, 236, 210, 0.25);
+  color: var(--kb-soft);
+}
+
+.kc-sel-kind {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.kc-sel-type {
+  font-size: 12.5px;
+  color: var(--kb-soft);
+}
+
+.kc-sel-when {
+  font-size: 11.5px;
+  color: var(--kb-text);
+}
+
+.kc-sel-when[data-next] {
+  color: var(--kb-signal-text);
+}
+
+.kc-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  border-radius: 3px;
+  padding: 4px 7px;
+}
+
+.kc-badge[data-tone='ok'] {
+  color: var(--kb-sage);
+  border: 1px solid rgba(156, 196, 154, 0.4);
+}
+
+.kc-badge[data-tone='warn'] {
+  letter-spacing: 0.1em;
+  color: var(--kb-sand);
+  border: 1px solid rgba(217, 163, 91, 0.4);
+}
+
+.kc-badge-diamond {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--kb-sand);
+  transform: rotate(45deg);
+}
+
+.kc-sel-title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  color: var(--kb-text);
+  overflow-wrap: anywhere;
+}
+
+.kc-sel-title[data-done] {
+  text-decoration: line-through;
+  color: var(--kb-soft);
+}
+
+.kc-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 236, 210, 0.08);
+}
+
+.kc-rows > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.kc-rows dt {
+  flex: 0 0 92px;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kc-rows dd {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kc-row-v {
+  font-size: 14px;
+  color: var(--kb-text);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.kc-row-v2 {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  overflow-wrap: anywhere;
+}
+
+.kc-contact-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.kc-contact-actions .kb-ib {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  color: var(--kb-soft);
+}
+
+.kc-contact-actions .kb-ib[aria-disabled='true'] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.kc-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-soft);
+  border-radius: 5px;
+}
+
+.kc-note-label {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+}
+
+.kc-note-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--kb-head);
+  text-wrap: pretty;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.kc-note-text[data-mono] {
+  font-size: 12px;
+}
+
+.kc-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kc-primary {
+  min-height: 46px;
+  gap: 10px;
+  padding: 0 16px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.kc-primary[data-busy] {
+  background: rgba(255, 106, 43, 0.1);
+  border-color: rgba(255, 106, 43, 0.45);
+  color: var(--kb-signal-text) !important;
+  box-shadow: none;
+  cursor: default;
+}
+
+.kc-hint {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+  text-wrap: pretty;
+}
+
+.kc-preparing {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.kc-preparing-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--kb-text);
+}
+
+.kc-scanbar {
+  position: relative;
+  height: 3px;
+  background: rgba(255, 236, 210, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.kc-scanbar span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 28%;
+  background: var(--kb-signal);
+  animation: kc-scan 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes kc-scan {
+  from {
+    transform: translateX(-110%);
+  }
+
+  to {
+    transform: translateX(410%);
+  }
+}
+
+.kc-pair {
+  display: flex;
+  gap: 8px;
+}
+
+.kc-pair .kb-btn {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 10px;
+}
+
+.kc-pair .kb-btn[aria-expanded='true'] {
+  background: #201e1a;
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kc-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  margin-top: -6px;
+  background: #201e1a;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 5px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+}
+
+.kc-menu-item {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--kb-soft);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.kc-menu-item:hover {
+  background-color: #24221e;
+  color: var(--kb-text);
+}
+
+/* «Перенести» у повтора серии: «Только это / Вся серия» над пресетами. */
+.kc-menu-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  padding: 4px 4px 8px 4px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.kc-menu-to {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+/* «⋯» в шапке «Выбрано»: меню события поверх панели. */
+.kc-sel-more {
+  position: relative;
+  margin-left: auto;
+  flex: none;
+}
+
+.kc-sel-more .kb-ib {
+  color: var(--kb-soft);
+}
+
+.kc-menu-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 212px;
+  margin-top: 0;
+}
+
+.kc-menu-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kc-menu-item[data-danger] {
+  color: var(--kb-sand);
+}
+
+.kc-menu-item[data-danger]:hover {
+  background-color: rgba(217, 163, 91, 0.1);
+  color: #e8b878;
+}
+
+/* Тихая кнопка «Удалить событие» внизу панели. */
+.kc-delete {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin: -4px 0 0 -8px;
+  padding: 0 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 12.5px;
+  color: var(--kb-mute);
+  cursor: pointer;
+  transition-property: color, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.kc-delete:hover,
+.kc-delete:focus-visible {
+  color: var(--kb-sand);
+  background-color: rgba(217, 163, 91, 0.08);
+}
+
+.kc-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 24px 0;
+}
+
+.kc-confirm-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--kb-text);
+  text-wrap: balance;
+}
+
+.kc-confirm-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+/* The modal's pinned footer: 18px = the old gap (10) + margin (8) above the buttons. */
+.kc-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 18px 24px 22px;
+}
+
+.kc-confirm-actions .kb-btn {
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+.kc-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(217, 163, 91, 0.12);
+  border: 1px solid rgba(217, 163, 91, 0.55);
+  color: #e8b878;
+}
+
+/* «Всю серию» рядом с «Только этот»: тот же песок, но тише — главное действие у повтора то, что ближе. */
+.kc-danger-soft {
+  background: transparent;
+  border-color: rgba(217, 163, 91, 0.32);
+  color: var(--kb-sand);
+}
+
+.kc-danger:hover:not(:disabled) {
+  background: rgba(217, 163, 91, 0.2);
+}
+
+.kc-note-ok {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: -6px;
+  font-size: 12.5px;
+  color: var(--kb-soft);
+}
+
+/* «Календарь не обновился» над сеткой (DarkStates: плашка «нет связи» — песок, сетка остаётся). */
+.kc-stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+  padding: 8px 8px 8px 14px;
+  background: #201b13;
+  border: 1px solid rgba(217, 163, 91, 0.45);
+  border-radius: 6px;
+  color: var(--kb-sand);
+}
+
+.kc-stale-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--kb-text);
+}
+
+.kc-stale-meta {
+  font-size: 11px;
+  color: var(--kb-sand);
+  font-variant-numeric: tabular-nums;
+}
+
+.kc-stale-text {
+  flex: 1 1 160px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kc-stale-retry {
+  min-height: 32px;
+}
+
+/* Телефон: причина — своей строкой под заголовком, «Повторить» — под ней. */
+.kc-screen[data-phone] .kc-stale-text {
+  flex-basis: 100%;
+}
+
+.kc-error-line {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--kb-sand);
+}
+
+.kc-journal {
+  margin: 0;
+  max-height: 60vh;
+  overflow: auto;
+  padding: 12px 14px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-soft);
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--kb-head);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Phone: the journal sheet's body scrolls, not a 60vh box inside it; the confirmation's
+   buttons share the bottom sheet's width (thumb reach), text lines up with the title. */
+@media (max-width: 640px) {
+  .kc-confirm {
+    padding: 16px 20px 0;
+  }
+
+  .kc-confirm-actions {
+    padding: 16px 20px;
+  }
+
+  .kc-confirm-actions .kb-btn {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .kc-journal {
+    max-height: none;
+    overflow: visible;
+    margin: 12px 16px 16px;
+  }
+}
+
+/* ------------------------------------------------------------------ телефон */
+
+.kc-screen[data-phone] {
+  gap: 20px;
+  margin-top: 0;
+}
+
+.kc-screen[data-phone] .kc-toolbar {
+  gap: 12px;
+}
+
+.kc-screen[data-phone] .kc-heading {
+  order: -1;
+  flex: 1 1 100%;
+}
+
+.kc-screen[data-phone] .kc-eyebrow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-screen[data-phone] .kc-toolbar > .kb-spacer {
+  display: none;
+}
+
+.kc-screen[data-phone] .kc-title {
+  font-size: 28px;
+}
+
+.kc-screen[data-phone] .kc-views {
+  order: 3;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.kc-screen[data-phone] .kc-views .kb-segmented {
+  display: flex;
+}
+
+.kc-screen[data-phone] .kc-views .kb-seg {
+  flex: 1;
+  min-height: 40px;
+}
+
+.kc-screen[data-phone] .kc-sync {
+  order: 6;
+  flex: 1 1 100%;
+}
+
+.kc-screen[data-phone] .kc-today {
+  order: 2;
+  margin-left: auto;
+  min-height: 44px;
+}
+
+.kc-screen[data-phone] .kc-views .kb-seg {
+  padding: 0 8px;
+}
+
+.kc-screen[data-phone] .kc-qa {
+  padding-left: 12px;
+}
+
+.kc-screen[data-phone] .kc-add-label {
+  display: none;
+}
+
+.kc-screen[data-phone] .kc-add {
+  padding: 0 14px;
+}
+
+.kc-screen[data-phone] .kc-filters {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 0 16px 4px;
+  scrollbar-width: none;
+}
+
+.kc-screen[data-phone] .kc-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.kc-screen[data-phone] .kc-chip {
+  min-height: 40px;
+  flex: none;
+}
+
+.kc-screen[data-phone] .kc-month-cell {
+  min-height: 64px;
+  padding: 4px 2px;
+}
+
+.kc-screen[data-phone] .kc-month-n {
+  font-size: 14px;
+}
+
+/* Телефон: короткое событие нарисовано по длительности (20–40 px), но ловит палец на 44 px —
+   невидимое продолжение кнопки сверху и снизу; часовое событие (42 px) просто дотягивается до 44. */
+.kc-screen[data-phone] .kc-ev-grid:not([data-long]),
+.kc-screen[data-phone] .kc-strip .kc-ev-pill {
+  overflow: visible;
+}
+
+.kc-screen[data-phone] .kc-ev-grid:not([data-long])::after,
+.kc-screen[data-phone] .kc-strip .kc-ev-pill::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  top: min(-1px, calc(50% - 22px));
+  bottom: min(-1px, calc(50% - 22px));
+}
+
+.kc-screen[data-phone] .kc-ev-grid[data-long] {
+  min-height: 44px;
+}
+
+.kc-month-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 2px 4px;
+}
+
+.kc-month-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kb-soft);
+}
+
+.kc-month-dots span[data-type='agent_task'] {
+  background: var(--kb-signal);
+}
+
+.kc-month-dots span[data-type='server_schedule'] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--kb-mute);
+}
+
+.kc-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-nowline[data-today],
+  .kc-scanbar span,
+  .kc-sync .kb-ib[aria-busy='true'] svg {
+    animation: none;
+  }
+}

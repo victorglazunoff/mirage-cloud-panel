@@ -1,0 +1,535 @@
+/* Мастер «Новый проект» — модалка DarkProjects (3 шага + «Готово»). */
+
+/* Компьютер: плата висит от фиксированного верха (там, где DarkProjects центрирует её на 900px) —
+   подсказка, меняющая высоту тела, растит плату вниз. Телефон — шторка Modal (kabina.css). */
+.kb-modal.kp-wiz {
+  --kb-modal-foot-bg: #171613;
+  margin-top: clamp(0px, 12vh, 120px);
+  overflow: hidden;
+  border-color: rgba(255, 236, 210, 0.13);
+  border-radius: 6px;
+}
+
+.kp-wiz-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 20px 0 24px;
+}
+
+.kp-wiz-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kp-wiz-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.kp-wiz-head .kb-ib {
+  flex: none;
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 5px;
+}
+
+.kp-steps {
+  list-style: none;
+  margin: 0;
+  padding: 18px 24px 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.kp-steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kp-step-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 236, 210, 0.1);
+}
+
+.kp-step-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kp-step-n {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--kb-mute);
+}
+
+.kp-step-label {
+  font-size: 13px;
+  color: var(--kb-mute);
+}
+
+.kp-step-done {
+  display: inline-flex;
+}
+
+.kp-step-short {
+  display: none;
+}
+
+.kp-steps li[data-state='now'] .kp-step-bar { background: var(--kb-signal); }
+.kp-steps li[data-state='now'] .kp-step-n { color: var(--kb-signal); }
+.kp-steps li[data-state='now'] .kp-step-label { color: var(--kb-text); }
+.kp-steps li[data-state='done'] .kp-step-bar { background: var(--kb-sage); }
+.kp-steps li[data-state='done'] .kp-step-n { color: var(--kb-sage); }
+.kp-steps li[data-state='done'] .kp-step-label { color: var(--kb-soft); }
+
+.kp-wiz-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 24px 24px;
+}
+
+.kp-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kp-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.kp-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  background: var(--kb-bg);
+  border: 1px solid rgba(255, 236, 210, 0.14);
+  border-radius: 5px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kp-field:focus-within {
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.1);
+}
+
+.kp-field input {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--kb-text);
+}
+
+.kp-help {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+.kp-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid;
+  border-radius: 5px;
+}
+
+.kp-msg-diamond {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 6px 3px 0;
+  border-radius: 1px;
+  background: var(--kb-signal);
+  transform: rotate(45deg);
+}
+
+.kp-msg-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kp-msg-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.kp-msg-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kp-msg-action {
+  flex: none;
+  align-self: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-weight: 400;
+}
+
+.kp-mini-head {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+}
+
+.kp-sugg-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kp-sugg-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kp-sugg {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  background: #1f1d1a;
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.kp-sugg:hover {
+  background-color: #24221e;
+  border-color: rgba(255, 106, 43, 0.35);
+}
+
+.kp-sugg-label {
+  font-size: 12px;
+  color: var(--kb-text);
+}
+
+.kp-sugg-meta {
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.kp-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kp-recent-item {
+  gap: 12px;
+}
+
+.kp-recent-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kp-recent-when {
+  flex: none;
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.kp-step2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.kp-step2-form {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kp-wstar {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 236, 210, 0.14);
+  border-radius: 5px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--kb-text);
+}
+
+.kp-wstar[aria-pressed='true'] {
+  background: rgba(255, 106, 43, 0.08);
+  border-color: rgba(255, 106, 43, 0.45);
+}
+
+.kp-wstar-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kp-preview-col {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kp-preview {
+  flex: 1;
+  min-height: 136px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 6px;
+}
+
+.kp-preview-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.kp-preview-id {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.kp-preview-name {
+  font-size: 17px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kp-preview-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 16px;
+  margin-top: auto;
+}
+
+.kp-preview-spark > span {
+  flex: 1;
+  height: 3px;
+  background: rgba(237, 230, 218, 0.1);
+  border-radius: 1px;
+}
+
+.kp-preview-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--kb-line-soft);
+  font-size: 12.5px;
+  color: var(--kb-soft);
+}
+
+.kp-summary-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 236, 210, 0.08);
+}
+
+.kp-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 50px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.kp-summary-row dt {
+  flex: 0 0 104px;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kp-summary-row dd {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  color: var(--kb-text);
+  overflow-wrap: anywhere;
+}
+
+.kp-safe {
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kp-done {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.kp-done-mark {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+}
+
+.kp-draw {
+  stroke-dasharray: 40;
+  animation: kp-draw 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
+}
+
+@keyframes kp-draw {
+  from { stroke-dashoffset: 40; }
+  to { stroke-dashoffset: 0; }
+}
+
+.kp-done-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--kb-text);
+  text-wrap: balance;
+}
+
+.kp-done-line {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--kb-mute);
+  overflow-wrap: anywhere;
+}
+
+.kp-wiz-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px 16px 24px;
+  border-top: 1px solid rgba(255, 236, 210, 0.08);
+  background: #171613;
+}
+
+.kp-next {
+  min-height: 44px;
+  gap: 10px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+.kp-next[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kp-draw { animation: none; }
+}
+
+@media (max-width: 560px) {
+  .kp-wiz-head { padding: 16px 12px 0 16px; }
+  .kp-steps { padding: 14px 16px 0; }
+  .kp-wiz-body { padding: 18px 16px 20px; }
+  .kp-wiz-foot { padding: 12px 16px 14px; }
+  .kp-wiz-title { font-size: 22px; }
+  .kp-summary-row dt { flex-basis: 84px; }
+}
+
+/* Телефон: шапка с шагами закреплена над прокруткой тела — отделена линией; шаги в одну строку. */
+@media (max-width: 640px) {
+  .kp-steps {
+    gap: 6px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 236, 210, 0.08);
+  }
+
+  .kp-step-line {
+    gap: 6px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .kp-step-n {
+    flex: none;
+    letter-spacing: 0.04em;
+  }
+
+  .kp-step-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Полное имя шага остаётся для экранного диктора, на экране — короткое. */
+  .kp-step-full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .kp-step-short {
+    display: inline;
+  }
+
+  .kp-step-done {
+    flex: none;
+  }
+
+  .kp-wiz-body {
+    padding-top: 16px;
+  }
+}

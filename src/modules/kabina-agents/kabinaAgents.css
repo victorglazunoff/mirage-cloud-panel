@@ -1,0 +1,1603 @@
+/*
+ * «Агенты» (DarkAgents.dc.html) — классы helmet макета с приставкой kba-.
+ * Общие примитивы (кнопки, удержание, линейка, уголки) — в kabina.css.
+ */
+
+.kba-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ------------------------------------------------------- статусы формой */
+
+.kba-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  display: inline-block;
+}
+
+.kba-led-tool {
+  background: var(--kb-signal);
+  animation: kb-breathe 1.8s ease-in-out infinite;
+}
+
+.kba-led-wait {
+  border-radius: 1px;
+  background: var(--kb-signal);
+  transform: rotate(45deg);
+  animation: kb-flash 1s steps(1, end) infinite;
+}
+
+.kba-led-off {
+  background: var(--kb-led-idle);
+  box-shadow: inset 0 0 0 1px rgba(255, 236, 210, 0.1);
+}
+
+.kba-led-think {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--kb-signal-text);
+  animation: kba-think 2.4s ease-in-out infinite;
+}
+
+.kba-led-done {
+  width: 9px;
+  height: 5px;
+  border-radius: 0;
+  background: transparent;
+  border-left: 1.6px solid var(--kb-sage);
+  border-bottom: 1.6px solid var(--kb-sage);
+  transform: translateY(-2px) rotate(-45deg);
+  box-sizing: border-box;
+}
+
+.kba-led-error {
+  border-radius: 1px;
+  background: repeating-linear-gradient(45deg, var(--kb-sand) 0 1.5px, transparent 1.5px 3.5px);
+  box-shadow: inset 0 0 0 1.2px var(--kb-sand);
+}
+
+.kba-mk {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  display: inline-block;
+}
+
+.kba-mk-tool {
+  background: var(--kb-signal);
+}
+
+.kba-mk-think {
+  box-shadow: inset 0 0 0 1.5px var(--kb-signal-text);
+}
+
+.kba-mk-wait {
+  border-radius: 1px;
+  background: var(--kb-signal);
+  transform: rotate(45deg);
+}
+
+@keyframes kba-think {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.38;
+  }
+}
+
+/* --------------------------------------------------------------- сводка */
+
+.kba-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px 40px;
+}
+
+.kba-summary-text {
+  flex: 1 1 380px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kba-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--kb-mute);
+}
+
+.kba-title {
+  margin: 0;
+  font-size: clamp(32px, 3.8vw, 50px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.kba-lead {
+  margin: 0;
+  max-width: 54ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kba-stopall {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding-top: 4px;
+}
+
+.kba-stopall .kb-hold {
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.kba-note {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+.kba-stats {
+  flex: 1 1 600px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  background: var(--kb-line);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.kba-stat {
+  flex: 1 1 112px;
+  min-width: 0;
+  min-height: 112px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--kb-panel);
+}
+
+.kba-stat[data-tone='wait'] {
+  background: var(--kb-wait-cell);
+}
+
+.kba-stat-code {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 10px;
+}
+
+.kba-stat-code .kb-m {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--kb-soft);
+  white-space: nowrap;
+}
+
+.kba-stat-n {
+  font-size: 44px;
+  line-height: 0.9;
+  font-weight: 500;
+  color: var(--kb-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.kba-stat-unit {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--kb-mute);
+  margin-left: 4px;
+}
+
+/*
+ * A narrow cell (1280) folds the caption onto a second line instead of «агент в 1 прое…»;
+ * the free height goes above the caption, so the numbers stay on one line across the cells.
+ */
+.kba-stat-label {
+  margin-top: auto;
+  font-size: 13px;
+  color: var(--kb-soft);
+  overflow: hidden;
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.kba-stat[data-tone='wait'] .kba-stat-code .kb-m,
+.kba-stat[data-tone='wait'] .kba-stat-n {
+  color: var(--kb-signal);
+}
+
+.kba-stat[data-tone='error'] .kba-stat-code .kb-m,
+.kba-stat[data-tone='error'] .kba-stat-n {
+  color: var(--kb-sand);
+}
+
+/* ------------------------------------------------------------ ждёт тебя */
+
+.kba-wait {
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-wait-bg);
+  border: 1px solid rgba(255, 106, 43, 0.55);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.06);
+}
+
+.kba-wait-stripe {
+  height: 6px;
+  background: repeating-linear-gradient(135deg, var(--kb-signal) 0 6px, transparent 6px 12px);
+}
+
+.kba-wait-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 32px;
+  padding: 16px 18px 18px;
+}
+
+.kba-wait-main {
+  flex: 1 1 520px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kba-wait-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.kba-wait-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-signal);
+}
+
+.kba-wait-title span {
+  color: var(--kb-text);
+}
+
+.kba-wait-ctx {
+  font-size: 10.5px;
+  color: var(--kb-soft);
+}
+
+.kba-wait-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.kba-cmd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--kb-text);
+  overflow-x: auto;
+}
+
+.kba-cmd > span:first-child {
+  color: var(--kb-signal);
+}
+
+.kba-cmd > span:last-child {
+  white-space: nowrap;
+}
+
+.kba-wait-actions {
+  flex: 0 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kba-wait-actions .kb-btn,
+.kba-detail-actions .kb-btn,
+.kba-detail-actions .kb-hold {
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.kba-wait-actions .kb-pri {
+  padding: 0 18px;
+}
+
+.kba-wait-actions .kba-reject {
+  padding: 0 18px;
+  color: var(--kb-soft);
+  font-weight: 400;
+}
+
+.kba-decision {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 0 2px;
+  font-size: 11.5px;
+  animation: kb-fadein 0.2s ease-out both;
+}
+
+/* --------------------------------------------------------- раскладка */
+
+.kba-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px 40px;
+  align-items: flex-start;
+}
+
+.kba-main {
+  flex: 999 1 640px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.kba-aside {
+  flex: 1 1 360px;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.kba-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  font-size: 10.5px;
+  color: var(--kb-soft);
+}
+
+.kba-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.kba-legend li[data-wait] {
+  color: var(--kb-signal-text);
+}
+
+/* Телефон: табло 2 × 2 + токены во всю ширину, подписи в две строки вместо «никто не р…»;
+   легенда — одной строкой под заголовком, листается пальцем. */
+@media (max-width: 600px) {
+  .kba-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kba-stat {
+    min-height: 104px;
+    justify-content: space-between;
+  }
+
+  .kba-stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .kba-stat-label {
+    margin-top: 0;
+    white-space: normal;
+    text-wrap: pretty;
+    overflow: visible;
+    display: block;
+  }
+
+  .kba-schema-head {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  /* Легенда — под заголовком в две строки целиком, без прокрутки и обрезки. */
+  .kba-schema-head .kba-legend {
+    flex: 1 0 100%;
+    order: 10;
+    flex-wrap: wrap;
+    row-gap: 8px;
+    white-space: nowrap;
+  }
+
+  .kba-schema-head .kba-legend li {
+    flex: none;
+  }
+
+}
+
+.kba-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* The first load failed: the error stands where the schema (and its skeleton) would be. */
+.kba-loaderror {
+  flex: 1 1 100%;
+  min-height: 430px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+}
+
+/* ------------------------------------------------------- карточка проекта */
+
+.kba-card {
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px 18px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  container: kba-card / inline-size;
+}
+
+.kba-card[data-wide] {
+  flex: 1 1 100%;
+  container-name: kba-wide;
+}
+
+.kba-card:not([data-wide]) {
+  flex: 1 1 400px;
+}
+
+.kba-card[data-tone='wait'] {
+  border-color: rgba(255, 106, 43, 0.4);
+}
+
+.kba-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 32px;
+}
+
+.kba-card-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.kba-card-path {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kba-card-meta {
+  font-size: 10.5px;
+}
+
+.kba-open {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  color: var(--kb-soft) !important;
+  transition: color 0.2s ease;
+}
+
+.kba-open:hover {
+  color: var(--kb-signal-text) !important;
+}
+
+/* фазы воркфлоу */
+
+.kba-phases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 10px;
+}
+
+.kba-phase {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kba-phase-cap {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.kba-phase-cap > span:first-child {
+  color: var(--kb-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kba-phase-cap > span:first-child b {
+  color: var(--kb-signal);
+  font-weight: 400;
+}
+
+.kba-phase-cap > span:last-child {
+  letter-spacing: 0.04em;
+}
+
+.kba-phase-bar {
+  position: relative;
+  display: block;
+  height: 4px;
+  border-radius: 1px;
+  overflow: hidden;
+  background: rgba(255, 236, 210, 0.08);
+}
+
+.kba-phase-bar[data-state='done'] {
+  background: rgba(156, 196, 154, 0.55);
+}
+
+.kba-phase-bar[data-state='failed'] {
+  background: repeating-linear-gradient(135deg, var(--kb-sand) 0 3px, transparent 3px 6px);
+}
+
+.kba-phase-bar[data-state='waiting'] {
+  background: repeating-linear-gradient(135deg, var(--kb-signal) 0 3px, transparent 3px 6px);
+  animation: kb-flash 1s steps(1, end) infinite;
+}
+
+.kba-phase-ticks {
+  display: block;
+  height: 4px;
+  background: repeating-linear-gradient(90deg, rgba(255, 236, 210, 0.16) 0 1px, transparent 1px 10%);
+}
+
+.kba-scanbar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 28%;
+  background: var(--kb-signal);
+  animation: kb-scan 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.kba-toolline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  background: rgba(255, 106, 43, 0.1);
+}
+
+/* ------------------------------------------------------------ сцена-радар */
+
+.kba-stage {
+  position: relative;
+  height: 380px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 236, 210, 0.07);
+  background-color: #141311;
+  background-image:
+    linear-gradient(rgba(255, 236, 210, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 236, 210, 0.025) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+  overflow: hidden;
+}
+
+.kba-fx {
+  position: absolute;
+  pointer-events: none;
+}
+
+.kba-rings {
+  transform: translate(-50%, -50%);
+}
+
+.kba-sweepbox {
+  width: 1600px;
+  height: 1600px;
+  transform: translate(-50%, -50%);
+}
+
+.kba-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 90deg,
+    rgba(255, 106, 43, 0) 0deg,
+    rgba(255, 106, 43, 0) 326deg,
+    rgba(255, 106, 43, 0.075) 359deg,
+    rgba(255, 106, 43, 0) 360deg
+  );
+  animation: kba-spin 10s linear infinite;
+}
+
+.kba-sweep > span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 106, 43, 0.55), rgba(255, 106, 43, 0) 70%);
+}
+
+.kba-ring {
+  transform-origin: 50% 50%;
+  animation: kba-spin 30s linear infinite;
+}
+
+@keyframes kba-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.kba-phase-div {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed rgba(255, 236, 210, 0.08);
+}
+
+.kba-phase-label {
+  position: absolute;
+  top: 10px;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kba-links {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.kba-links path {
+  fill: none;
+}
+
+.kba-link-base {
+  stroke-width: 1px;
+}
+
+.kba-link-flow {
+  stroke-linecap: round;
+}
+
+.kba-link-base[data-look='tool'] { stroke: rgba(255, 106, 43, 0.3); }
+.kba-link-base[data-look='think'] { stroke: rgba(255, 106, 43, 0.16); }
+.kba-link-base[data-look='wait'] { stroke: rgba(255, 106, 43, 0.22); }
+.kba-link-base[data-look='done'] { stroke: rgba(156, 196, 154, 0.22); }
+.kba-link-base[data-look='off'] { stroke: rgba(255, 236, 210, 0.08); stroke-dasharray: 2 4; }
+.kba-link-base[data-look='error'] { stroke: rgba(217, 163, 91, 0.4); stroke-dasharray: 2 5; }
+
+.kba-link-flow[data-look='tool'] {
+  stroke: var(--kb-signal);
+  stroke-width: 2.5px;
+  stroke-dasharray: 2px 16px;
+  animation: kba-flow 0.9s linear infinite;
+}
+
+.kba-link-flow[data-look='think'] {
+  stroke: rgba(255, 138, 85, 0.6);
+  stroke-width: 2px;
+  stroke-dasharray: 2px 18px;
+  animation: kba-flow 3s linear infinite;
+}
+
+.kba-link-flow[data-look='wait'] {
+  stroke: var(--kb-signal);
+  stroke-width: 1.5px;
+  stroke-dasharray: 5px 5px;
+  animation: kba-blinkline 1s steps(1, end) infinite;
+}
+
+.kba-link-flow[data-look='done'],
+.kba-link-flow[data-look='off'],
+.kba-link-flow[data-look='error'] {
+  display: none;
+}
+
+@keyframes kba-flow {
+  to {
+    stroke-dashoffset: -20px;
+  }
+}
+
+@keyframes kba-blinkline {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.kba-cont {
+  left: 12px;
+  top: 10px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--kb-mute);
+}
+
+.kba-cont b {
+  color: var(--kb-soft);
+  font-weight: 400;
+}
+
+.kba-overflow {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: var(--kb-mute);
+}
+
+/* центр — главный диалог */
+
+.kba-core {
+  position: absolute;
+  transform: translate(-50%, -28px);
+  width: 164px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.kba-core-c {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-sep);
+  color: var(--kb-sep);
+  outline: 0 solid transparent;
+  outline-offset: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.kba-core[data-live] .kba-core-c {
+  border-color: var(--kb-signal);
+  color: var(--kb-signal);
+}
+
+.kba-core[aria-pressed='true'] .kba-core-c {
+  outline: 1.5px solid var(--kb-text);
+}
+
+.kba-core:hover .kba-core-c {
+  background-color: #211f1b;
+}
+
+.kba-core-orbit {
+  position: absolute;
+  left: -11px;
+  top: -11px;
+}
+
+.kba-ripple {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 106, 43, 0.6);
+  animation: kba-ripple 2.2s ease-out infinite;
+}
+
+@keyframes kba-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+.kba-core-l {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.kba-core-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--kb-text);
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.kba-core-act {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--kb-soft);
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.kba-core-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.kba-chip {
+  font-size: 9.5px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 3px;
+  flex: none;
+  color: var(--kb-soft);
+  border: 1px solid rgba(255, 236, 210, 0.14);
+}
+
+.kba-chip[data-model='opus'],
+.kba-chip[data-model='fable'] {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.45);
+}
+
+.kba-chip[data-model='sonnet'] {
+  color: var(--kb-text);
+  border-color: rgba(255, 236, 210, 0.22);
+}
+
+/* контакт — агент */
+
+.kba-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px 10px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 5px;
+  outline: 0 solid transparent;
+  outline-offset: 3px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 2;
+  transition: border-color 0.3s ease, background-color 0.2s ease;
+}
+
+.kba-node:hover {
+  background-color: #211f1b !important;
+}
+
+.kba-node[aria-pressed='true'] {
+  outline: 1.5px solid var(--kb-text);
+}
+
+.kba-node[data-look='think'] {
+  border-color: rgba(255, 106, 43, 0.32);
+  animation: kba-glow 3.2s ease-in-out infinite;
+}
+
+.kba-node[data-look='tool'] {
+  border-color: rgba(255, 106, 43, 0.6);
+  box-shadow: 0 0 0 1px rgba(255, 106, 43, 0.1), 0 0 26px rgba(255, 106, 43, 0.12);
+}
+
+.kba-node[data-look='wait'] {
+  border-color: var(--kb-signal);
+  background: var(--kb-wait-bg);
+  animation: kba-alert 1.8s ease-in-out infinite;
+}
+
+.kba-node[data-look='done'],
+.kba-node[data-look='off'] {
+  background: #171613;
+}
+
+.kba-node[data-look='error'] {
+  border: 1px dashed rgba(217, 163, 91, 0.55);
+}
+
+@keyframes kba-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 106, 43, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(255, 106, 43, 0.05), 0 0 22px rgba(255, 106, 43, 0.08);
+  }
+}
+
+@keyframes kba-alert {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 106, 43, 0), 0 0 16px rgba(255, 106, 43, 0.14);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 106, 43, 0.1), 0 0 32px rgba(255, 106, 43, 0.26);
+  }
+}
+
+.kba-node-stripe {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: repeating-linear-gradient(135deg, var(--kb-signal) 0 4px, transparent 4px 8px);
+}
+
+.kba-node-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.kba-node-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--kb-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kba-node-act {
+  font-size: 12px;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kba-node[data-look='done'] .kba-node-name,
+.kba-node[data-look='off'] .kba-node-name {
+  color: var(--kb-soft);
+}
+
+.kba-node[data-look='done'] .kba-node-act,
+.kba-node[data-look='off'] .kba-node-act {
+  color: var(--kb-mute);
+}
+
+.kba-node-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+}
+
+.kba-node-meta > span:first-child {
+  color: var(--kb-mute);
+}
+
+/* цвет подписи состояния */
+.kba-st[data-look='think'],
+.kba-st[data-look='tool'] { color: var(--kb-signal-text); }
+.kba-st[data-look='wait'] { color: var(--kb-signal); }
+.kba-st[data-look='done'] { color: var(--kb-sage); }
+.kba-st[data-look='off'] { color: var(--kb-mute); }
+.kba-st[data-look='error'] { color: var(--kb-sand); }
+
+/* Узкая карточка — список вместо радара (макет: @container ≤ 760 / ≤ 400). */
+@container kba-wide (max-width: 760px) {
+  .kba-stage {
+    height: auto !important;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+  .kba-stage .kba-node,
+  .kba-stage .kba-core {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    width: 100% !important;
+  }
+  .kba-stage .kba-core {
+    flex-direction: row;
+    gap: 18px;
+    padding: 6px 4px 10px 10px;
+  }
+  .kba-stage .kba-core-l {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .kba-stage .kba-fx,
+  .kba-stage .kba-overflow {
+    display: none !important;
+  }
+}
+
+@container kba-card (max-width: 400px) {
+  .kba-stage {
+    height: auto !important;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+  .kba-stage .kba-node,
+  .kba-stage .kba-core {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    width: 100% !important;
+  }
+  .kba-stage .kba-core {
+    flex-direction: row;
+    gap: 18px;
+    padding: 6px 4px 10px 10px;
+  }
+  .kba-stage .kba-core-l {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .kba-stage .kba-fx,
+  .kba-stage .kba-overflow {
+    display: none !important;
+  }
+}
+
+/* ------------------------------------------------------------- панель агента */
+
+.kba-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+}
+
+.kba-detail[data-tone='wait'] {
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kba-detail-where {
+  min-width: 0;
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kba-detail-name {
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.kba-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+.kba-detail-tags .kba-chip {
+  padding: 4px 7px;
+}
+
+.kba-detail-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.kba-now {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px 13px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+}
+
+.kba-now[data-look='think'] { border-color: rgba(255, 106, 43, 0.32); }
+.kba-now[data-look='tool'] { border-color: rgba(255, 106, 43, 0.6); }
+.kba-now[data-look='wait'] { border-color: var(--kb-signal); }
+.kba-now[data-look='error'] { border-color: rgba(217, 163, 91, 0.55); }
+
+.kba-cap {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+}
+
+.kba-now-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--kb-text);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.kba-read {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: rgba(255, 236, 210, 0.08);
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.kba-read[data-cols='2'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.kba-read > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #171613;
+  min-width: 0;
+}
+
+.kba-read-k {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kba-read-v {
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--kb-text);
+}
+
+.kba-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kba-task {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.kba-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 236, 210, 0.07);
+}
+
+.kba-log-empty {
+  margin: 0;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 236, 210, 0.07);
+  border-bottom: 1px solid rgba(255, 236, 210, 0.06);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+  text-wrap: pretty;
+}
+
+.kba-log li {
+  display: grid;
+  grid-template-columns: 62px 74px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 236, 210, 0.06);
+}
+
+.kba-log-t {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+.kba-log-tool {
+  font-size: 10.5px;
+  color: var(--kb-head);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kba-log-tool[data-tone='mute'] { color: var(--kb-mute); }
+.kba-log-tool[data-tone='you'] { color: var(--kb-signal); }
+.kba-log-tool[data-tone='agent'] { color: var(--kb-signal-text); }
+.kba-log-tool[data-tone='err'] { color: var(--kb-sand); }
+
+.kba-log-what {
+  font-size: 13px;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kba-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kba-detail-actions .kb-pri {
+  flex: 1 1 170px;
+}
+
+.kba-detail-actions > .kb-btn,
+.kba-detail-actions > .kb-hold {
+  flex: 1 1 140px;
+  font-size: 13px;
+}
+
+/* «Остановить УДЕРЖИВАЙ» не сжимается под свой текст (overflow: hidden у kb-hold обнулял min-width):
+   не влезает рядом — уходит на свою строку. */
+.kba-detail-actions > .kb-hold {
+  min-width: max-content;
+  padding: 0 16px;
+  gap: 10px;
+}
+
+.kba-detail-actions .kb-pri,
+.kba-detail-actions .kba-reject {
+  font-size: 14px;
+}
+
+.kba-detail-actions .kba-reject {
+  flex: 0 1 auto;
+  color: var(--kb-soft);
+  font-weight: 400;
+}
+
+.kba-retry {
+  border-color: rgba(217, 163, 91, 0.45) !important;
+  color: var(--kb-sand) !important;
+}
+
+/* ------------------------------------------------------------------ лента */
+
+.kba-feed-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.kba-feed-scale {
+  flex: 1;
+  height: 8px;
+  background: repeating-linear-gradient(90deg, rgba(255, 236, 210, 0.13) 0 1px, transparent 1px 8px) left bottom / 100% 4px no-repeat;
+}
+
+.kba-feed-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  color: var(--kb-soft);
+}
+
+.kba-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--kb-line);
+}
+
+.kba-feed li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 9px 8px;
+  border-bottom: 1px solid rgba(255, 236, 210, 0.07);
+  transition: background-color 0.2s ease;
+}
+
+.kba-feed li:hover {
+  background-color: var(--kb-row-hover);
+}
+
+.kba-feed li[data-fresh] {
+  animation: kba-feedin 0.55s var(--kb-ease-out) both;
+}
+
+@keyframes kba-feedin {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    background-color: rgba(255, 106, 43, 0.12);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    background-color: rgba(255, 106, 43, 0);
+  }
+}
+
+.kba-feed-t {
+  width: 58px;
+  flex: none;
+  padding-top: 2px;
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+.kba-feed li:first-child .kba-feed-t {
+  color: var(--kb-text);
+}
+
+.kba-feed-mk {
+  width: 10px;
+  flex: none;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.kba-feed-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kba-feed-p {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--kb-mute);
+}
+
+/* Суть события важнее имени сессии: при нехватке места сначала сжимается имя (до ~5 знаков),
+   потом — текст события. */
+.kba-feed-line {
+  display: flex;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.kba-feed-a,
+.kba-feed-x {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kba-feed-a {
+  flex: 0 1000 auto;
+  min-width: min(5em, 30%);
+  color: var(--kb-head);
+}
+
+/* Не сжимается долями пикселя вслед за именем (иначе «ход завершён» получал «…» на 0,3px);
+   длинная суть сама режется по ширине, оставив имени min-width. */
+.kba-feed-x {
+  flex: 0 0 auto;
+  max-width: calc(100% - min(5em, 30%));
+}
+
+.kba-feed li:first-child .kba-feed-a {
+  color: var(--kb-text);
+}
+
+.kba-feed-x[data-kind='tool'],
+.kba-feed-x[data-kind='start'],
+.kba-feed-x[data-kind='resolved'] { color: var(--kb-soft); }
+.kba-feed-x[data-kind='turn'],
+.kba-feed-x[data-kind='stopped'] { color: var(--kb-mute); }
+.kba-feed-x[data-kind='waiting'] { color: var(--kb-signal-text); }
+.kba-feed-x[data-kind='done'] { color: var(--kb-sage); }
+.kba-feed-x[data-kind='error'] { color: var(--kb-sand); }
+
+.kba-feed-empty {
+  padding: 14px 8px;
+  font-size: 13px;
+  color: var(--kb-mute);
+  border-bottom: 1px solid rgba(255, 236, 210, 0.07);
+}
+
+/* ------------------------------------------------------- пустое состояние */
+
+.kba-empty {
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+}
+
+.kba-empty-in {
+  min-height: 300px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px 22px;
+  text-align: center;
+  border-radius: 6px;
+  background-image:
+    linear-gradient(rgba(255, 236, 210, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 236, 210, 0.03) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.kba-empty-icon {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(255, 236, 210, 0.2);
+  border-radius: 6px;
+}
+
+.kba-empty-icon > span {
+  display: flex;
+  gap: 6px;
+}
+
+.kba-empty-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 30ch;
+}
+
+.kba-empty-text h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  text-wrap: balance;
+}
+
+.kba-empty-text p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kba-empty .kb-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  font-weight: 600;
+}
+
+.kba-empty-hint {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  text-wrap: balance;
+}
+
+/* --------------------------------------------------------- меньше движения */
+
+@media (prefers-reduced-motion: reduce) {
+  .kba-screen *,
+  .kba-screen *::before,
+  .kba-screen *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .kba-sweepbox {
+    display: none;
+  }
+}
+
+/* Телефон: табло агента — цифры с воздухом до рамок ячеек, как на табло главного.
+   В конце файла: базовые .kba-read-* объявлены ниже блока телефона наверху и перебивали его. */
+@media (max-width: 600px) {
+  .kba-read > div {
+    gap: 8px;
+    padding: 12px 10px 12px 12px;
+  }
+
+  .kba-read-v {
+    font-size: clamp(17px, 5.2vw, 21px);
+    white-space: nowrap;
+  }
+}

@@ -1,0 +1,43 @@
+CloudCLI UI
+Copyright 2025-2026 Siteboon AI B.V. and contributors
+
+This software is licensed under the GNU Affero General Public License v3.0
+or later (AGPL-3.0-or-later). See the LICENSE file for the full license text,
+including additional terms under Section 7.
+
+Originally developed by Siteboon AI B.V. (https://github.com/siteboon/claudecodeui).
+
+Contributions by Siteboon AI B.V. prior to commit 004135ef were originally
+published under GPL-3.0 and are hereby relicensed to AGPL-3.0-or-later.
+Contributions by other authors prior to that commit remain under GPL-3.0
+and are incorporated into this work as permitted by GPL-3.0 Section 13.
+
+=========================================================================
+
+Mirage Cloud Panel
+Copyright 2026 Mirage Cloud Panel contributors
+
+Mirage Cloud Panel (https://github.com/victorglazunoff/mirage-cloud-panel)
+is a MODIFIED VERSION of CloudCLI UI
+(https://github.com/siteboon/claudecodeui). It is not the original
+CloudCLI UI software and is not endorsed by Siteboon AI B.V.
+
+Attribution required by Section 1 of the additional terms in LICENSE:
+
+  "CloudCLI UI (https://github.com/siteboon/claudecodeui)"
+
+The modifications are distributed under the same GNU Affero General Public
+License v3.0 or later, including the additional terms under Section 7
+(see LICENSE). They include, among others:
+
+  - the «Кабина» interface (a Russian-language skin) with its own screens:
+    home, chat, files, calendar, search, settings and the sign-in flow;
+  - steering messages into a running turn, the agent tree and artifacts;
+  - sign-in security: two-factor authentication (TOTP), tracked sign-ins,
+    attempt throttling;
+  - a calendar with scheduled messages, optional Google Calendar sync and
+    an optional Telegram notification bot;
+  - the "Mirage Cloud Panel" name, the `mirage` command and the logo.
+
+The names "CloudCLI", "CloudCLI UI" and "Siteboon" are used only to describe
+the origin of this work, as the additional terms allow.

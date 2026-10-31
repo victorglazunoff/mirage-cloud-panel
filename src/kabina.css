@@ -1,0 +1,487 @@
+/*
+ * «Кабина» — тема панели «Мираж» (форк CloudCLI).
+ *
+ * Подключается в main.tsx ПОСЛЕ index.css авторов и переопределяет только
+ * переменные темы и глобальные мелочи — разметку авторов почти не трогаем,
+ * чтобы обновления от авторов не давали конфликтов. Палитра шкал Tailwind
+ * (gray/blue/red…) подменена в tailwind.kabina.cjs.
+ *
+ * Здесь нет @layer: в Tailwind v3 он доступен только в файле с @tailwind, а
+ * обычные правила этого файла и так идут после всего index.css.
+ *
+ * Эталон вида — the design mock-up и DarkChat.dc.html.
+ */
+
+/* ---------------------------------------------------------------- токены */
+
+:root {
+  /* Светлая «Кабина» — бумага приборной доски; переключается в настройках. */
+  --background: 40 33% 95%;
+  --foreground: 40 12% 9%;
+  --card: 40 40% 98%;
+  --card-foreground: 40 12% 9%;
+  --popover: 40 40% 98%;
+  --popover-foreground: 40 12% 9%;
+  --primary: 18 88% 50%;
+  --primary-foreground: 40 9% 6.5%;
+  --secondary: 40 22% 90%;
+  --secondary-foreground: 40 12% 16%;
+  --muted: 40 22% 91%;
+  --muted-foreground: 36 8% 38%;
+  --accent: 40 22% 89%;
+  --accent-foreground: 40 12% 16%;
+  --destructive: 14 63% 46%;
+  --destructive-foreground: 40 40% 98%;
+  --border: 40 16% 84%;
+  --input: 40 16% 82%;
+  --ring: 18 88% 50%;
+  --radius: 0.375rem;
+
+  --nav-glass-bg: 40 33% 95% / 0.82;
+  --nav-tab-glow: 18 88% 50% / 0.14;
+  --nav-tab-ring: 18 88% 50% / 0.22;
+  --nav-float-shadow: 30 20% 10% / 0.08;
+  --nav-float-ring: 40 16% 84% / 0.7;
+  --nav-divider-color: 40 16% 84% / 0.8;
+  --nav-input-bg: 40 22% 90% / 0.7;
+  --nav-input-focus-ring: 18 88% 50% / 0.22;
+
+  /* Служебные токены «Кабины» — для своих классов ниже. */
+  --kb-signal: #ec5a1d;
+  --kb-signal-text: #c44a17;
+  --kb-sage: #4d734c;
+  --kb-sand: #a87131;
+  --kb-clay: #86685b;
+  --kb-hairline: rgba(40, 30, 15, 0.12);
+  --kb-tick: rgba(40, 30, 15, 0.32);
+  --kb-tick-minor: rgba(40, 30, 15, 0.16);
+  --kb-corner: rgba(40, 30, 15, 0.34);
+  --kb-grid: rgba(40, 30, 15, 0.035);
+  --kb-glow: rgba(236, 90, 29, 0.06);
+  --kb-led-idle: #cfc6b7;
+}
+
+.dark {
+  /* Тёмная «Кабина» — тема по умолчанию. */
+  --background: 40 9% 6.5%;         /* #12110F — фон */
+  --foreground: 38 35% 89%;         /* #EDE6DA — текст */
+  --card: 45 8% 9.4%;               /* #1A1916 — панель */
+  --card-foreground: 38 35% 89%;
+  --popover: 36 9% 10.8%;           /* #1E1C19 — всплывающее */
+  --popover-foreground: 38 35% 89%;
+  --primary: 18 100% 58%;           /* #FF6A2B — сигнал */
+  --primary-foreground: 40 9% 6.5%; /* тёмный текст на сигнале, как в макете */
+  --secondary: 40 8% 13%;
+  --secondary-foreground: 38 35% 89%;
+  --muted: 40 8% 12%;
+  --muted-foreground: 38 14% 65.5%; /* #B3AA9B — второй текст */
+  --accent: 40 8% 14%;              /* наведение строк #24221E */
+  --accent-foreground: 38 35% 89%;
+  --destructive: 15 70% 56%;        /* обожжённый кирпич, не кислотный красный */
+  --destructive-foreground: 40 9% 6.5%;
+  --border: 38 9% 14.5%;            /* ≈ rgba(255,236,210,.09) на фоне */
+  --input: 38 9% 17%;
+  --ring: 18 100% 58%;
+
+  --nav-glass-bg: 40 9% 7% / 0.86;
+  --nav-glass-blur: 18px;
+  --nav-glass-saturate: 1.2;
+  --nav-tab-glow: 18 100% 58% / 0.16;
+  --nav-tab-ring: 18 100% 58% / 0.32;
+  --nav-float-shadow: 0 0% 0% / 0.5;
+  --nav-float-ring: 38 9% 16% / 0.9;
+  --nav-divider-color: 38 9% 16% / 0.9;
+  --nav-input-bg: 40 8% 11% / 0.9;
+  --nav-input-focus-ring: 18 100% 58% / 0.25;
+
+  --kb-signal: #ff6a2b;
+  --kb-signal-text: #ff8a55;
+  --kb-sage: #9cc49a;
+  --kb-sand: #d9a35b;
+  --kb-clay: #b8998a;
+  --kb-hairline: rgba(255, 236, 210, 0.09);
+  --kb-tick: rgba(255, 236, 210, 0.3);
+  --kb-tick-minor: rgba(255, 236, 210, 0.13);
+  --kb-corner: rgba(255, 236, 210, 0.34);
+  --kb-grid: rgba(255, 236, 210, 0.022);
+  --kb-glow: rgba(255, 106, 43, 0.06);
+  --kb-led-idle: #3b3833;
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------ типографика */
+
+body {
+  font-family: "Golos Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "kern";
+  text-rendering: optimizeLegibility;
+}
+
+/* Martian Mono — широкий шрифт; сужаем, как в макете (wdth 87.5), и ровняем цифры. */
+code,
+kbd,
+samp,
+pre,
+.font-mono {
+  font-stretch: 87.5%;
+  font-variant-numeric: tabular-nums;
+}
+
+.font-display {
+  letter-spacing: 0.01em;
+}
+
+::selection {
+  background: rgba(255, 106, 43, 0.3);
+}
+
+/* Фокус — сигнальный, как в макете; где авторы гасят outline, остаётся их ring. */
+:focus-visible {
+  outline-color: hsl(var(--ring));
+}
+
+/* В тёмной теме чистый белый режет глаз на тёплом фоне — заменяем на текст кабины. */
+/* :where() держит специфичность как у утилиты — явный dark:text-* авторов сильнее. */
+:where(.dark) .text-white {
+  color: hsl(var(--foreground));
+}
+
+/* Кнопки на сигнале: в «Кабине» текст на оранжевом тёмный, а не белый. */
+:where(.dark) .bg-primary.text-white,
+:where(.dark) .bg-blue-500.text-white,
+:where(.dark) .bg-blue-600.text-white,
+:where(.dark) .bg-orange-500.text-white,
+:where(.dark) .bg-orange-600.text-white {
+  color: hsl(var(--background));
+}
+
+/* --------------------------------------------------------------- фон-сетка */
+
+/*
+ * Сетка 32px — только на поверхностях цвета фона (не на панелях), с фиксацией
+ * к окну, чтобы вложенные поверхности не давали сдвинутых линий.
+ */
+.bg-background {
+  background-image:
+    radial-gradient(900px 480px at 8% -8%, var(--kb-glow), transparent 65%),
+    linear-gradient(var(--kb-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--kb-grid) 1px, transparent 1px);
+  background-size: auto, 32px 32px, 32px 32px;
+  background-attachment: fixed;
+}
+
+/* Поля ввода и кнопки цвета фона — без сетки. */
+input.bg-background,
+textarea.bg-background,
+select.bg-background,
+button.bg-background {
+  background-image: none;
+}
+
+/* ------------------------------------------------------- мелочи под тему */
+
+.dark [class*="ring-offset"],
+.dark button:focus {
+  --tw-ring-offset-color: #12110f;
+}
+
+.dark select option {
+  background-color: #1e1c19 !important;
+  color: #ede6da !important;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 236, 210, 0.12);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 236, 210, 0.22);
+}
+
+.dark .scrollbar-thin {
+  scrollbar-color: rgba(255, 236, 210, 0.14) transparent;
+}
+
+.dark,
+.dark * {
+  scrollbar-color: rgba(255, 236, 210, 0.14) transparent;
+}
+
+.dark input[type="checkbox"]:checked,
+.dark input[type="radio"]:checked {
+  background-color: #ff6a2b;
+  border-color: #ff6a2b;
+}
+
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+progress {
+  accent-color: hsl(var(--primary));
+}
+
+.dark textarea::placeholder,
+.dark input::placeholder,
+.dark .chat-input-placeholder::placeholder {
+  color: #948c7e !important;
+}
+
+/* Markdown (tailwind typography) — тёплые тона вместо холодных серых плагина. */
+.prose {
+  --tw-prose-body: #2a2722;
+  --tw-prose-headings: #12110f;
+  --tw-prose-links: #c44a17;
+  --tw-prose-bold: #12110f;
+  --tw-prose-counters: #6a6358;
+  --tw-prose-bullets: #ada495;
+  --tw-prose-hr: #dfd8cb;
+  --tw-prose-quotes: #1e1c19;
+  --tw-prose-quote-borders: #ec5a1d;
+  --tw-prose-code: #12110f;
+  --tw-prose-pre-code: #ede6da;
+  --tw-prose-pre-bg: #1a1916;
+  --tw-prose-th-borders: #ccc3b4;
+  --tw-prose-td-borders: #dfd8cb;
+
+  --tw-prose-invert-body: #ddd5c7;
+  --tw-prose-invert-headings: #ede6da;
+  --tw-prose-invert-lead: #b3aa9b;
+  --tw-prose-invert-links: #ff8a55;
+  --tw-prose-invert-bold: #ede6da;
+  --tw-prose-invert-counters: #948c7e;
+  --tw-prose-invert-bullets: #948c7e;
+  --tw-prose-invert-hr: rgba(255, 236, 210, 0.12);
+  --tw-prose-invert-quotes: #d9d1c3;
+  --tw-prose-invert-quote-borders: #ff6a2b;
+  --tw-prose-invert-captions: #948c7e;
+  --tw-prose-invert-code: #ede6da;
+  --tw-prose-invert-pre-code: #ede6da;
+  --tw-prose-invert-pre-bg: #161512;
+  --tw-prose-invert-th-borders: rgba(255, 236, 210, 0.16);
+  --tw-prose-invert-td-borders: rgba(255, 236, 210, 0.09);
+}
+
+/* --------------------------------------------- элементы «Кабины» (kb-*) */
+
+/* Шрифты макета как утилиты для своей разметки. */
+.kb-t {
+  font-family: Tektur, "Golos Text", sans-serif;
+}
+
+.kb-m {
+  font-family: "Martian Mono", ui-monospace, monospace;
+  font-stretch: 87.5%;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Подпись раздела: моно, разрядка, как «01 ИЗБРАННОЕ». */
+.kb-label {
+  font-family: "Martian Mono", ui-monospace, monospace;
+  font-stretch: 87.5%;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Линейка с делениями у заголовка раздела: крупные каждые 48px, мелкие каждые 8px. */
+.kb-ruler {
+  flex: 1 1 auto;
+  min-width: 12px;
+  height: 8px;
+  background:
+    repeating-linear-gradient(90deg, var(--kb-tick) 0 1px, transparent 1px 48px) left bottom / 100% 8px no-repeat,
+    repeating-linear-gradient(90deg, var(--kb-tick-minor) 0 1px, transparent 1px 8px) left bottom / 100% 4px no-repeat;
+}
+
+/* Уголки-метки на карточке (левый верхний и правый нижний). */
+.kb-corners {
+  position: relative;
+}
+
+.kb-corners::before,
+.kb-corners::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 0 solid var(--kb-corner);
+  pointer-events: none;
+  transition: border-color 0.2s ease;
+}
+
+.kb-corners::before {
+  top: -1px;
+  left: -1px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+  border-top-left-radius: 6px;
+}
+
+.kb-corners::after {
+  right: -1px;
+  bottom: -1px;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+  border-bottom-right-radius: 6px;
+}
+
+/* Статусы формой: круг-пульс «работает», мигающий ромб «ждёт тебя», тёмный «тихо». */
+.kb-led {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.kb-led-run {
+  background: var(--kb-signal);
+  animation: kb-breathe 1.8s ease-in-out infinite;
+}
+
+.kb-led-wait {
+  border-radius: 1px;
+  background: var(--kb-signal);
+  transform: rotate(45deg) scale(0.9);
+  animation: kb-flash 1s steps(1, end) infinite;
+}
+
+.kb-led-idle {
+  background: var(--kb-led-idle);
+  box-shadow: inset 0 0 0 1px rgba(255, 236, 210, 0.1);
+}
+
+/* Фоновая работа (агенты, воркфлоу) — тот же круг-пульс, но глиной, чтобы не путать с ходом. */
+.kb-led-bg {
+  background: var(--kb-clay);
+  animation: kb-breathe-clay 1.8s ease-in-out infinite;
+}
+
+@keyframes kb-breathe-clay {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(184, 153, 138, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(184, 153, 138, 0);
+  }
+}
+
+.kb-led-done {
+  background: var(--kb-sage);
+}
+
+@keyframes kb-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 106, 43, 0.55), 0 0 6px rgba(255, 106, 43, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 106, 43, 0), 0 0 12px rgba(255, 106, 43, 0.9);
+  }
+}
+
+@keyframes kb-flash {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+
+/* Мигающее двоеточие часов в шапке. */
+.kb-colon {
+  animation: kb-flash 2s steps(1, end) infinite;
+}
+
+/* Бегущая полоска «идёт ход». */
+@keyframes kb-scan {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(410%);
+  }
+}
+
+.kb-scan {
+  animation: kb-scan 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes kb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.kb-rise {
+  animation: kb-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kb-led-run,
+  .kb-led-bg,
+  .kb-led-wait,
+  .kb-scan,
+  .kb-colon,
+  .kb-rise {
+    animation: none !important;
+  }
+}
+
+/* ------------------------------------------------- чат: композер и лента */
+
+/*
+ * Композер авторов узнаём по data-slot — разметку не трогаем. Как в макете:
+ * плотная панель, внутренняя светлая кромка, глубокая тень, сигнальный фокус.
+ */
+[data-slot="prompt-input"] {
+  border-radius: 8px;
+  border-color: hsl(var(--foreground) / 0.12);
+  background-color: hsl(var(--card));
+  backdrop-filter: none;
+  box-shadow: inset 0 1px 0 rgba(255, 236, 210, 0.04), 0 14px 36px rgba(0, 0, 0, 0.18);
+}
+
+.dark [data-slot="prompt-input"] {
+  box-shadow: inset 0 1px 0 rgba(255, 236, 210, 0.04), 0 14px 36px rgba(0, 0, 0, 0.4);
+}
+
+[data-slot="prompt-input"]:focus-within {
+  border-color: hsl(var(--primary) / 0.55);
+  --tw-ring-color: transparent;
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.08), 0 14px 36px rgba(0, 0, 0, 0.25);
+}
+
+.dark [data-slot="prompt-input"]:focus-within {
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.08), 0 14px 36px rgba(0, 0, 0, 0.4);
+}
+
+[data-slot="prompt-input-textarea"] {
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* Реплики чата — 15px с воздухом, как в макете; код в репликах — моно «Кабины». */
+.chat-message .prose-sm {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.chat-message .prose :where(code):not(:where(pre *)) {
+  font-size: 0.82em;
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  background: hsl(var(--foreground) / 0.07);
+  font-weight: 500;
+}

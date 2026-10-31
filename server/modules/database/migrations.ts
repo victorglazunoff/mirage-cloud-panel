@@ -1,0 +1,645 @@
+import { Database } from 'better-sqlite3';
+
+import {
+  APP_CONFIG_TABLE_SCHEMA_SQL,
+  AUTH_SESSIONS_TABLE_SCHEMA_SQL,
+  AUTH_THROTTLE_TABLE_SCHEMA_SQL,
+  AUTH_TRUSTED_DEVICES_TABLE_SCHEMA_SQL,
+  CALENDAR_EVENT_OVERRIDES_TABLE_SCHEMA_SQL,
+  CALENDAR_EVENTS_TABLE_SCHEMA_SQL,
+  CALENDAR_GOOGLE_DELETIONS_TABLE_SCHEMA_SQL,
+  CALENDAR_GOOGLE_SYNC_TABLE_SCHEMA_SQL,
+  LAST_SCANNED_AT_SQL,
+  NOTIFICATION_CHANNEL_ENDPOINTS_TABLE_SCHEMA_SQL,
+  PROJECTS_TABLE_SCHEMA_SQL,
+  PROVIDER_MODELS_TABLE_SCHEMA_SQL,
+  PUSH_SUBSCRIPTIONS_TABLE_SCHEMA_SQL,
+  SESSION_DRAFTS_TABLE_SCHEMA_SQL,
+  SUPERSEDED_PROVIDER_SESSIONS_TABLE_SCHEMA_SQL,
+  TELEGRAM_LINK_CODES_TABLE_SCHEMA_SQL,
+  TELEGRAM_LINK_TABLE_SCHEMA_SQL,
+  SCHEDULED_MESSAGES_TABLE_SCHEMA_SQL,
+  SESSIONS_TABLE_SCHEMA_SQL,
+  USER_PREFERENCES_TABLE_SCHEMA_SQL,
+  USER_NOTIFICATION_PREFERENCES_TABLE_SCHEMA_SQL,
+  USER_SECURITY_TABLE_SCHEMA_SQL,
+  VAPID_KEYS_TABLE_SCHEMA_SQL,
+} from '@/modules/database/schema.js';
+
+const SQLITE_UUID_SQL = `
+lower(hex(randomblob(4))) || '-' ||
+lower(hex(randomblob(2))) || '-' ||
+lower(hex(randomblob(2))) || '-' ||
+lower(hex(randomblob(2))) || '-' ||
+lower(hex(randomblob(6)))
+`;
+
+type TableInfoRow = {
+  name: string;
+  pk: number;
+};
+
+const addColumnToTableIfNotExists = (
+  db: Database,
+  tableName: string,
+  columnNames: string[],
+  columnName: string,
+  columnType: string
+) => {
+  if (!columnNames.includes(columnName)) {
+    console.log(`Running migration: Adding ${columnName} column to ${tableName} table`);
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`);
+  }
+};
+
+const tableExists = (db: Database, tableName: string): boolean =>
+  Boolean(
+    db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(tableName)
+  );
+
+const getTableInfo = (db: Database, tableName: string): TableInfoRow[] =>
+  db.prepare(`PRAGMA table_info(${tableName})`).all() as TableInfoRow[];
+
+const migrateLegacySessionNames = (db: Database): void => {
+  const hasLegacySessionNamesTable = tableExists(db, 'session_names');
+  const hasSessionsTable = tableExists(db, 'sessions');
+
+  if (!hasLegacySessionNamesTable) {
+    return;
+  }
+
+  if (hasSessionsTable) {
+    console.log('Running migration: Merging session_names into sessions');
+    db.exec(`
+      INSERT INTO sessions (session_id, provider, custom_name, created_at, updated_at)
+      SELECT
+        session_id,
+        COALESCE(provider, 'claude'),
+        custom_name,
+        COALESCE(created_at, CURRENT_TIMESTAMP),
+        COALESCE(updated_at, CURRENT_TIMESTAMP)
+      FROM session_names
+      WHERE true
+      ON CONFLICT(session_id) DO UPDATE SET
+        provider = excluded.provider,
+        custom_name = COALESCE(excluded.custom_name, sessions.custom_name),
+        created_at = COALESCE(sessions.created_at, excluded.created_at),
+        updated_at = COALESCE(excluded.updated_at, sessions.updated_at)
+    `);
+    db.exec('DROP TABLE session_names');
+    return;
+  }
+
+  console.log('Running migration: Renaming session_names table to sessions');
+  db.exec('ALTER TABLE session_names RENAME TO sessions');
+};
+
+const migrateLegacyWorkspaceTableIntoProjects = (db: Database): void => {
+  db.exec(PROJECTS_TABLE_SCHEMA_SQL);
+
+  if (!tableExists(db, 'workspace_original_paths')) {
+    return;
+  }
+
+  console.log('Running migration: Migrating workspace_original_paths data into projects');
+  db.exec(`
+    INSERT INTO projects (project_id, project_path, custom_project_name, isStarred, isArchived)
+    SELECT
+      CASE
+        WHEN workspace_id IS NULL OR trim(workspace_id) = ''
+        THEN ${SQLITE_UUID_SQL}
+        ELSE workspace_id
+      END,
+      workspace_path,
+      custom_workspace_name,
+      COALESCE(isStarred, 0),
+      0
+    FROM workspace_original_paths
+    WHERE workspace_path IS NOT NULL AND trim(workspace_path) <> ''
+    ON CONFLICT(project_path) DO UPDATE SET
+      custom_project_name = COALESCE(projects.custom_project_name, excluded.custom_project_name),
+      isStarred = COALESCE(projects.isStarred, excluded.isStarred)
+  `);
+};
+
+const rebuildProjectsTableWithPrimaryKeySchema = (db: Database): void => {
+  const hasProjectsTable = tableExists(db, 'projects');
+  if (!hasProjectsTable) {
+    db.exec(PROJECTS_TABLE_SCHEMA_SQL);
+    return;
+  }
+
+  const projectsTableInfo = getTableInfo(db, 'projects');
+  const columnNames = projectsTableInfo.map((column) => column.name);
+  const hasProjectIdPrimaryKey = projectsTableInfo.some(
+    (column) => column.name === 'project_id' && column.pk === 1,
+  );
+
+  if (hasProjectIdPrimaryKey) {
+    addColumnToTableIfNotExists(db, 'projects', columnNames, 'custom_project_name', 'TEXT DEFAULT NULL');
+    addColumnToTableIfNotExists(db, 'projects', columnNames, 'isStarred', 'BOOLEAN DEFAULT 0');
+    addColumnToTableIfNotExists(db, 'projects', columnNames, 'isArchived', 'BOOLEAN DEFAULT 0');
+    db.exec(`
+      UPDATE projects
+      SET project_id = ${SQLITE_UUID_SQL}
+      WHERE project_id IS NULL OR trim(project_id) = ''
+    `);
+    return;
+  }
+
+  console.log('Running migration: Rebuilding projects table to enforce project_id primary key');
+
+  const projectPathExpression = columnNames.includes('project_path')
+    ? 'project_path'
+    : columnNames.includes('workspace_path')
+      ? 'workspace_path'
+      : 'NULL';
+
+  const customProjectNameExpression = columnNames.includes('custom_project_name')
+    ? 'custom_project_name'
+    : columnNames.includes('custom_workspace_name')
+      ? 'custom_workspace_name'
+      : 'NULL';
+
+  const isStarredExpression = columnNames.includes('isStarred') ? 'COALESCE(isStarred, 0)' : '0';
+
+  const isArchivedExpression = columnNames.includes('isArchived') ? 'COALESCE(isArchived, 0)' : '0';
+
+  const projectIdExpression = columnNames.includes('project_id')
+    ? `CASE
+         WHEN project_id IS NULL OR trim(project_id) = ''
+         THEN ${SQLITE_UUID_SQL}
+         ELSE project_id
+       END`
+    : SQLITE_UUID_SQL;
+
+  db.exec('PRAGMA foreign_keys = OFF');
+  try {
+    db.exec('BEGIN TRANSACTION');
+    db.exec('DROP TABLE IF EXISTS projects__new');
+    db.exec(`
+      CREATE TABLE projects__new (
+        project_id TEXT PRIMARY KEY NOT NULL,
+        project_path TEXT NOT NULL UNIQUE,
+        custom_project_name TEXT DEFAULT NULL,
+        isStarred BOOLEAN DEFAULT 0,
+        isArchived BOOLEAN DEFAULT 0
+      )
+    `);
+    db.exec(`
+      WITH source_rows AS (
+        SELECT
+          ${projectPathExpression} AS project_path,
+          ${customProjectNameExpression} AS custom_project_name,
+          ${isStarredExpression} AS isStarred,
+          ${isArchivedExpression} AS isArchived,
+          ${projectIdExpression} AS candidate_project_id,
+          rowid AS source_rowid
+        FROM projects
+        WHERE ${projectPathExpression} IS NOT NULL AND trim(${projectPathExpression}) <> ''
+      ),
+      deduped_paths AS (
+        SELECT
+          project_path,
+          custom_project_name,
+          isStarred,
+          isArchived,
+          candidate_project_id,
+          source_rowid,
+          ROW_NUMBER() OVER (PARTITION BY project_path ORDER BY source_rowid) AS project_path_rank
+        FROM source_rows
+      ),
+      prepared_rows AS (
+        SELECT
+          CASE
+            WHEN ROW_NUMBER() OVER (PARTITION BY candidate_project_id ORDER BY source_rowid) = 1
+            THEN candidate_project_id
+            ELSE ${SQLITE_UUID_SQL}
+          END AS project_id,
+          project_path,
+          custom_project_name,
+          isStarred,
+          isArchived
+        FROM deduped_paths
+        WHERE project_path_rank = 1
+      )
+      INSERT INTO projects__new (
+        project_id,
+        project_path,
+        custom_project_name,
+        isStarred,
+        isArchived
+      )
+      SELECT
+        project_id,
+        project_path,
+        custom_project_name,
+        isStarred,
+        isArchived
+      FROM prepared_rows
+    `);
+    db.exec('DROP TABLE projects');
+    db.exec('ALTER TABLE projects__new RENAME TO projects');
+    db.exec('COMMIT');
+  } catch (migrationError) {
+    db.exec('ROLLBACK');
+    throw migrationError;
+  } finally {
+    db.exec('PRAGMA foreign_keys = ON');
+  }
+};
+
+const rebuildSessionsTableWithProjectSchema = (db: Database): void => {
+  const hasSessions = tableExists(db, 'sessions');
+  if (!hasSessions) {
+    db.exec(SESSIONS_TABLE_SCHEMA_SQL);
+    return;
+  }
+
+  const sessionsTableInfo = getTableInfo(db, 'sessions');
+  const columnNames = sessionsTableInfo.map((column) => column.name);
+  const primaryKeyColumns = sessionsTableInfo
+    .filter((column) => column.pk > 0)
+    .sort((a, b) => a.pk - b.pk)
+    .map((column) => column.name);
+
+  const shouldRebuild =
+    !columnNames.includes('project_path') ||
+    primaryKeyColumns.length !== 1 ||
+    primaryKeyColumns[0] !== 'session_id' ||
+    !columnNames.includes('provider');
+
+  if (!shouldRebuild) {
+    addColumnToTableIfNotExists(db, 'sessions', columnNames, 'jsonl_path', 'TEXT');
+    addColumnToTableIfNotExists(db, 'sessions', columnNames, 'isArchived', 'BOOLEAN DEFAULT 0');
+    addColumnToTableIfNotExists(db, 'sessions', columnNames, 'created_at', 'DATETIME');
+    addColumnToTableIfNotExists(db, 'sessions', columnNames, 'updated_at', 'DATETIME');
+    db.exec('UPDATE sessions SET isArchived = COALESCE(isArchived, 0)');
+    db.exec('UPDATE sessions SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)');
+    db.exec('UPDATE sessions SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)');
+    return;
+  }
+
+  console.log('Running migration: Rebuilding sessions table to project-based schema');
+
+  const projectPathExpression = columnNames.includes('project_path')
+    ? 'project_path'
+    : columnNames.includes('workspace_path')
+      ? 'workspace_path'
+      : 'NULL';
+
+  const providerExpression = columnNames.includes('provider')
+    ? "COALESCE(provider, 'claude')"
+    : "'claude'";
+
+  const customNameExpression = columnNames.includes('custom_name')
+    ? 'custom_name'
+    : 'NULL';
+
+  const jsonlPathExpression = columnNames.includes('jsonl_path')
+    ? 'jsonl_path'
+    : 'NULL';
+
+  const isArchivedExpression = columnNames.includes('isArchived')
+    ? 'COALESCE(isArchived, 0)'
+    : '0';
+
+  const createdAtExpression = columnNames.includes('created_at')
+    ? 'COALESCE(created_at, CURRENT_TIMESTAMP)'
+    : 'CURRENT_TIMESTAMP';
+
+  const updatedAtExpression = columnNames.includes('updated_at')
+    ? 'COALESCE(updated_at, CURRENT_TIMESTAMP)'
+    : 'CURRENT_TIMESTAMP';
+
+  db.exec('PRAGMA foreign_keys = OFF');
+  try {
+    db.exec('BEGIN TRANSACTION');
+    db.exec('DROP TABLE IF EXISTS sessions__new');
+    db.exec(`
+      CREATE TABLE sessions__new (
+        session_id TEXT NOT NULL,
+        provider TEXT NOT NULL DEFAULT 'claude',
+        custom_name TEXT,
+        project_path TEXT,
+        jsonl_path TEXT,
+        isArchived BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (session_id),
+        FOREIGN KEY (project_path) REFERENCES projects(project_path)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+      )
+    `);
+    db.exec(`
+      WITH source_rows AS (
+        SELECT
+          session_id,
+          ${providerExpression} AS provider,
+          ${customNameExpression} AS custom_name,
+          ${projectPathExpression} AS project_path,
+          ${jsonlPathExpression} AS jsonl_path,
+          ${isArchivedExpression} AS isArchived,
+          ${createdAtExpression} AS created_at,
+          ${updatedAtExpression} AS updated_at,
+          rowid AS source_rowid
+        FROM sessions
+        WHERE session_id IS NOT NULL AND trim(session_id) <> ''
+      ),
+      ranked_rows AS (
+        SELECT
+          session_id,
+          provider,
+          custom_name,
+          project_path,
+          jsonl_path,
+          isArchived,
+          created_at,
+          updated_at,
+          ROW_NUMBER() OVER (
+            PARTITION BY session_id
+            ORDER BY datetime(COALESCE(updated_at, created_at)) DESC, source_rowid DESC
+          ) AS session_rank
+        FROM source_rows
+      )
+      INSERT INTO sessions__new (
+        session_id,
+        provider,
+        custom_name,
+        project_path,
+        jsonl_path,
+        isArchived,
+        created_at,
+        updated_at
+      )
+      SELECT
+        session_id,
+        provider,
+        custom_name,
+        project_path,
+        jsonl_path,
+        isArchived,
+        created_at,
+        updated_at
+      FROM ranked_rows
+      WHERE session_rank = 1
+    `);
+    db.exec('DROP TABLE sessions');
+    db.exec('ALTER TABLE sessions__new RENAME TO sessions');
+    db.exec('COMMIT');
+  } catch (migrationError) {
+    db.exec('ROLLBACK');
+    throw migrationError;
+  } finally {
+    db.exec('PRAGMA foreign_keys = ON');
+  }
+};
+
+/**
+ * Adds the `provider_session_id` mapping column used by the session gateway.
+ *
+ * Rows that existed before this migration were always keyed directly by the
+ * provider-native session id, so backfilling `provider_session_id` with
+ * `session_id` keeps every legacy row resolvable through the new mapping.
+ */
+const addProviderSessionIdMapping = (db: Database): void => {
+  const sessionsTableInfo = getTableInfo(db, 'sessions');
+  const columnNames = sessionsTableInfo.map((column) => column.name);
+
+  addColumnToTableIfNotExists(db, 'sessions', columnNames, 'provider_session_id', 'TEXT');
+  db.exec(`
+    UPDATE sessions
+    SET provider_session_id = session_id
+    WHERE provider_session_id IS NULL
+  `);
+};
+
+/**
+ * Adds the `forked_from_session_id` column recording where a branched session
+ * came from.
+ *
+ * Nothing is backfilled: a session that predates forking was not forked.
+ */
+/**
+ * Adds the transcript path to the superseded-session record.
+ *
+ * Only rows written before this column existed lack it, and there is nothing
+ * to backfill from — the session stopped pointing at that file when the row
+ * was created — so they keep a NULL and the delete path skips them.
+ */
+const addSupersededTranscriptPathColumn = (db: Database): void => {
+  const columnNames = getTableInfo(db, 'superseded_provider_sessions').map((column) => column.name);
+  addColumnToTableIfNotExists(db, 'superseded_provider_sessions', columnNames, 'jsonl_path', 'TEXT');
+};
+
+const addForkedFromSessionIdColumn = (db: Database): void => {
+  const columnNames = getTableInfo(db, 'sessions').map((column) => column.name);
+  addColumnToTableIfNotExists(db, 'sessions', columnNames, 'forked_from_session_id', 'TEXT');
+};
+
+/**
+ * Adds the `model` column that records which model each session runs with.
+ *
+ * Left NULL for pre-existing rows on purpose: the model resolver falls back to
+ * the provider-native lookup for sessions the app has never sent on, so a
+ * backfilled guess would only mask the real value.
+ */
+const addSessionModelColumn = (db: Database): void => {
+  const sessionsTableInfo = getTableInfo(db, 'sessions');
+  const columnNames = sessionsTableInfo.map((column) => column.name);
+
+  addColumnToTableIfNotExists(db, 'sessions', columnNames, 'model', 'TEXT');
+};
+
+/**
+ * Adds the `effort` column that records a session's reasoning-effort choice.
+ *
+ * Existing rows stay NULL so clients can continue falling back to their
+ * per-provider preference until the user selects an effort or sends a turn.
+ */
+const addSessionEffortColumn = (db: Database): void => {
+  const sessionsTableInfo = getTableInfo(db, 'sessions');
+  const columnNames = sessionsTableInfo.map((column) => column.name);
+
+  addColumnToTableIfNotExists(db, 'sessions', columnNames, 'effort', 'TEXT');
+};
+
+/**
+ * Adds the reasoning-effort metadata columns to the custom-model library.
+ *
+ * Existing rows stay NULL on purpose: no effort levels were ever declared for
+ * them, and a guessed list could offer levels the model rejects. Those models
+ * keep hiding the composer's Reasoning section until the user declares levels.
+ */
+const addProviderModelEffortColumns = (db: Database): void => {
+  const columnNames = getTableInfo(db, 'provider_models').map((column) => column.name);
+  addColumnToTableIfNotExists(db, 'provider_models', columnNames, 'effort_values', 'TEXT DEFAULT NULL');
+  addColumnToTableIfNotExists(db, 'provider_models', columnNames, 'effort_default', 'TEXT DEFAULT NULL');
+};
+
+const ensureProjectsForSessionPaths = (db: Database): void => {
+  if (!tableExists(db, 'sessions')) {
+    return;
+  }
+
+  db.exec(`
+    INSERT INTO projects (project_id, project_path, custom_project_name, isStarred, isArchived)
+    SELECT
+      ${SQLITE_UUID_SQL},
+      project_path,
+      NULL,
+      0,
+      0
+    FROM sessions
+    WHERE project_path IS NOT NULL AND trim(project_path) <> ''
+    ON CONFLICT(project_path) DO NOTHING
+  `);
+};
+
+/**
+ * Mirage migration (Х24, Б11, Х9): the calendar's own events and the sign-in
+ * security tables (TOTP, sign-ins, remembered devices, attempt throttle).
+ *
+ * Purely additive and idempotent — new tables and indexes only — so it is safe
+ * on every start and on databases that predate it.
+ */
+const addMirageCalendarAndSignInSecurityTables = (db: Database): void => {
+  db.exec(CALENDAR_EVENTS_TABLE_SCHEMA_SQL);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_calendar_events_user_start ON calendar_events(user_id, starts_at)');
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_events_google_event
+    ON calendar_events(google_event_id) WHERE google_event_id IS NOT NULL
+  `);
+  db.exec(USER_SECURITY_TABLE_SCHEMA_SQL);
+  db.exec(AUTH_SESSIONS_TABLE_SCHEMA_SQL);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions(user_id, revoked_at)');
+  db.exec(AUTH_TRUSTED_DEVICES_TABLE_SCHEMA_SQL);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_auth_trusted_devices_user ON auth_trusted_devices(user_id)');
+  db.exec(AUTH_THROTTLE_TABLE_SCHEMA_SQL);
+};
+
+// Mirage: the Telegram bot's linked chat and its one-time link codes.
+const addMirageTelegramTables = (db: Database): void => {
+  db.exec(TELEGRAM_LINK_TABLE_SCHEMA_SQL);
+  db.exec(TELEGRAM_LINK_CODES_TABLE_SCHEMA_SQL);
+};
+
+/**
+ * Mirage migration (Х24, Google Calendar): marks where each calendar event
+ * comes from and whether it still has to reach Google.
+ *
+ * - `origin`: `panel` (made in the panel, pushed to Google) or `google`
+ *   (imported from the user's Google Calendar, never written back);
+ * - `google_pending`: 1 while a local change has not reached Google yet;
+ * - `google_error`: why the last push of this event failed;
+ * - `all_day`: an imported all-day Google event.
+ *
+ * Additive and idempotent. Existing rows become `panel` events with nothing
+ * pending, so turning the sync on never pushes old events by surprise.
+ */
+const addMirageGoogleCalendarSync = (db: Database): void => {
+  const columnNames = getTableInfo(db, 'calendar_events').map((column) => column.name);
+  addColumnToTableIfNotExists(db, 'calendar_events', columnNames, 'origin', "TEXT NOT NULL DEFAULT 'panel'");
+  addColumnToTableIfNotExists(db, 'calendar_events', columnNames, 'google_pending', 'INTEGER NOT NULL DEFAULT 0');
+  addColumnToTableIfNotExists(db, 'calendar_events', columnNames, 'google_error', 'TEXT');
+  addColumnToTableIfNotExists(db, 'calendar_events', columnNames, 'all_day', 'INTEGER NOT NULL DEFAULT 0');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_calendar_events_google_pending ON calendar_events(google_pending, origin)');
+  db.exec(CALENDAR_GOOGLE_SYNC_TABLE_SCHEMA_SQL);
+  db.exec(CALENDAR_GOOGLE_DELETIONS_TABLE_SCHEMA_SQL);
+};
+
+/**
+ * Mirage migration (calendar exceptions): one changed occurrence of a
+ * recurring event — done, moved or deleted only on its day — is stored
+ * beside the series instead of refusing the action.
+ *
+ * Additive and idempotent: a new table and an index, nothing existing is
+ * rewritten, so every series keeps expanding exactly as before.
+ */
+const addMirageCalendarOccurrenceOverrides = (db: Database): void => {
+  db.exec(CALENDAR_EVENT_OVERRIDES_TABLE_SCHEMA_SQL);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_calendar_event_overrides_pending ON calendar_event_overrides(user_id, google_pending)');
+};
+
+export const runMigrations = (db: Database) => {
+  try {
+    const usersTableInfo = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
+    const userColumnNames = usersTableInfo.map((column) => column.name);
+
+    addColumnToTableIfNotExists(db, 'users', userColumnNames, 'git_name', 'TEXT');
+    addColumnToTableIfNotExists(db, 'users', userColumnNames, 'git_email', 'TEXT');
+    addColumnToTableIfNotExists(
+      db,
+      'users',
+      userColumnNames,
+      'has_completed_onboarding',
+      'BOOLEAN DEFAULT 0'
+    );
+
+    db.exec(APP_CONFIG_TABLE_SCHEMA_SQL);
+    db.exec(USER_NOTIFICATION_PREFERENCES_TABLE_SCHEMA_SQL);
+    db.exec(VAPID_KEYS_TABLE_SCHEMA_SQL);
+    db.exec(PUSH_SUBSCRIPTIONS_TABLE_SCHEMA_SQL);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions(user_id)');
+    db.exec(NOTIFICATION_CHANNEL_ENDPOINTS_TABLE_SCHEMA_SQL);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_notification_channel_endpoints_user_channel ON notification_channel_endpoints(user_id, channel)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_notification_channel_endpoints_enabled ON notification_channel_endpoints(enabled)');
+    db.exec(PROVIDER_MODELS_TABLE_SCHEMA_SQL);
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_provider_models_provider_order
+      ON provider_models(provider, sort_order, id)
+    `);
+    addProviderModelEffortColumns(db);
+    db.exec(USER_PREFERENCES_TABLE_SCHEMA_SQL);
+    db.exec(SESSION_DRAFTS_TABLE_SCHEMA_SQL);
+    db.exec(SUPERSEDED_PROVIDER_SESSIONS_TABLE_SCHEMA_SQL);
+    addSupersededTranscriptPathColumn(db);
+
+    db.exec(PROJECTS_TABLE_SCHEMA_SQL);
+    rebuildProjectsTableWithPrimaryKeySchema(db);
+
+    migrateLegacyWorkspaceTableIntoProjects(db);
+    rebuildSessionsTableWithProjectSchema(db);
+    migrateLegacySessionNames(db);
+    addProviderSessionIdMapping(db);
+    addSessionModelColumn(db);
+    addSessionEffortColumn(db);
+    addForkedFromSessionIdColumn(db);
+    ensureProjectsForSessionPaths(db);
+    db.exec(SCHEDULED_MESSAGES_TABLE_SCHEMA_SQL);
+
+    db.exec('CREATE INDEX IF NOT EXISTS idx_session_ids_lookup ON sessions(session_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_sessions_provider_session_id ON sessions(provider_session_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_sessions_project_path ON sessions(project_path)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_sessions_forked_from ON sessions(forked_from_session_id)');
+    // The due-message poll runs on a timer; without this it table-scans.
+    db.exec('CREATE INDEX IF NOT EXISTS idx_scheduled_messages_due ON scheduled_messages(status, scheduled_for)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_scheduled_messages_session ON scheduled_messages(session_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_sessions_is_archived ON sessions(isArchived)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_projects_is_starred ON projects(isStarred)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_projects_is_archived ON projects(isArchived)');
+
+    db.exec('DROP INDEX IF EXISTS idx_session_names_lookup');
+    db.exec('DROP INDEX IF EXISTS idx_sessions_workspace_path');
+    db.exec('DROP INDEX IF EXISTS idx_workspace_original_paths_is_starred');
+    db.exec('DROP INDEX IF EXISTS idx_workspace_original_paths_workspace_id');
+
+    if (tableExists(db, 'workspace_original_paths')) {
+      console.log('Running migration: Dropping legacy workspace_original_paths table');
+      db.exec('DROP TABLE workspace_original_paths');
+    }
+
+    db.exec(LAST_SCANNED_AT_SQL);
+    addMirageCalendarAndSignInSecurityTables(db);
+    addMirageTelegramTables(db);
+    addMirageGoogleCalendarSync(db);
+    addMirageCalendarOccurrenceOverrides(db);
+    console.log('Database migrations completed successfully');
+  } catch (error: any) {
+    console.error('Error running migrations:', error.message);
+    throw error;
+  }
+};

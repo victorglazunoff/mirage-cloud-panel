@@ -1,0 +1,199 @@
+/*
+ * «Уведомления» (DarkSettings 04.1 «Куда писать»): строка канала Telegram.
+ * Размеры — из макета: знак 40×40, имя 15/500, подпись 13, кнопка 40px.
+ */
+
+.kb-tgl {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kb-tgl-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  /* Mock-up: a channel row is ~93px tall. */
+  min-height: 92px;
+  box-sizing: border-box;
+  padding: 16px 18px;
+}
+
+/* In the settings plate: a row among the other channels (hover and divider like .kb-set-row). */
+.kb-tgl-bare {
+  transition: background-color 0.2s ease;
+}
+
+.kb-tgl-bare > .kb-tgl-row:hover {
+  background-color: var(--kb-panel-3);
+}
+
+.kb-tgl-bare + .kb-set-row {
+  border-top: 1px solid var(--kb-line-soft);
+}
+
+.kb-tgl-switch {
+  flex: none;
+  display: flex;
+}
+
+.kb-tgl-mono {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--kb-mute);
+  transition: color 0.2s var(--kb-ease-out), border-color 0.2s var(--kb-ease-out);
+}
+
+.kb-tgl-mono.is-live {
+  color: #ff8a55;
+  border-color: rgba(255, 106, 43, 0.45);
+}
+
+.kb-tgl-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kb-tgl-name {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.kb-tgl-sub {
+  display: flex;
+  /* The dot sits on the first line when the text wraps (phone). */
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-tgl-sub[data-tone='idle'] {
+  color: var(--kb-mute);
+}
+
+.kb-tgl-sub .kb-tgl-led {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  /* (13px × 1.4 line − 6px dot) / 2 */
+  margin-top: 6px;
+}
+
+.kb-tgl-action {
+  flex: none;
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 13.5px;
+}
+
+.kb-tgl-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid var(--kb-line);
+  background: var(--kb-well);
+}
+
+.kb-tgl-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+}
+
+.kb-tgl-label {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kb-tgl-code-value {
+  font-size: 13px;
+  color: var(--kb-text);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.kb-tgl-timer {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--kb-signal-text);
+}
+
+.kb-tgl-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-tgl-hint[data-tone='warn'] {
+  color: var(--kb-sand);
+}
+
+.kb-tgl-hint .kb-m {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.kb-tgl-link {
+  color: var(--kb-signal-text) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+.kb-tgl-error {
+  margin: 0;
+  padding: 0 18px 14px;
+  font-size: 13px;
+  color: #e9805e;
+}
+
+@media (max-width: 480px) {
+  .kb-tgl-row {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+  }
+
+  .kb-tgl-action {
+    width: 100%;
+  }
+
+  /* In the settings plate the row lines up with the MAX and browser rows below it. */
+  .kb-tgl-bare .kb-tgl-row {
+    padding: 14px 18px;
+  }
+
+  /* The switch stays on the name's line; the action button takes the next one. */
+  .kb-tgl-text {
+    flex: 1 1 0;
+  }
+
+  .kb-tgl-switch {
+    order: 2;
+  }
+
+  .kb-tgl-action {
+    order: 3;
+  }
+
+  .kb-tgl-pending {
+    padding: 12px 14px 14px;
+  }
+}

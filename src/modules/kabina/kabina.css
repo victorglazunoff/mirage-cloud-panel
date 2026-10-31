@@ -1,0 +1,2577 @@
+/*
+ * «Кабина» — собственный слой интерфейса Mirage (src/modules/kabina).
+ *
+ * Источник правды — <helmet> макетов the design mock-ups: классы
+ * оттуда перенесены сюда с приставкой kb-, чтобы не пересекаться с Tailwind
+ * авторов. Значения (цвета, отступы, тайминги) — из макетов без округлений.
+ */
+
+/* ---------------------------------------------------------------- токены */
+
+.kb-root,
+.kb-portal {
+  --kb-bg: #12110f;
+  --kb-panel: #1a1916;
+  --kb-panel-2: #1e1c19;
+  --kb-panel-3: #1d1b18;
+  --kb-well: #161512;
+  --kb-input: #181714;
+  --kb-hover: #1f1d19;
+  --kb-row-hover: #1c1a17;
+  --kb-wait-bg: #1f1813;
+  --kb-wait-cell: #241a14;
+  --kb-text: #ede6da;
+  --kb-soft: #b3aa9b;
+  --kb-mute: #948c7e;
+  --kb-dim: #6f685e;
+  --kb-head: #d9d1c3;
+  --kb-sep: #5e584f;
+  --kb-signal: #ff6a2b;
+  --kb-signal-hover: #ff7d45;
+  --kb-signal-text: #ff8a55;
+  --kb-sage: #9cc49a;
+  --kb-sand: #d9a35b;
+  --kb-line: rgba(255, 236, 210, 0.09);
+  --kb-line-soft: rgba(255, 236, 210, 0.07);
+  --kb-line-mid: rgba(255, 236, 210, 0.1);
+  --kb-line-btn: rgba(255, 236, 210, 0.12);
+  --kb-line-strong: rgba(255, 236, 210, 0.14);
+  --kb-corner: rgba(255, 236, 210, 0.34);
+  --kb-tick: rgba(255, 236, 210, 0.3);
+  --kb-tick-minor: rgba(255, 236, 210, 0.13);
+  --kb-led-idle: #3b3833;
+  --kb-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --kb-ease-dial: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  color: var(--kb-text);
+  font-family: 'Golos Text', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Resets sit in :where() so they never outrank a component class (.kb-btn font-size etc.). */
+:where(.kb-root, .kb-portal) a {
+  color: var(--kb-text);
+  text-decoration: none;
+}
+
+:where(.kb-root, .kb-portal) :where(button, input, textarea) {
+  font: inherit;
+  color: inherit;
+}
+
+:where(.kb-root, .kb-portal) :where(input, textarea)::placeholder {
+  color: var(--kb-mute);
+}
+
+:where(.kb-root, .kb-portal) :focus-visible {
+  outline: 2px solid var(--kb-signal);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ типографика */
+
+.kb-t {
+  font-family: Tektur, 'Golos Text', sans-serif;
+}
+
+.kb-m {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-stretch: 87.5%;
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.kb-spacer {
+  flex: 1 1 0;
+}
+
+.kb-balance {
+  text-wrap: balance;
+}
+
+.kb-pretty {
+  text-wrap: pretty;
+}
+
+/* ------------------------------------------------ панель с уголками-метками */
+
+.kb-bz {
+  position: relative;
+}
+
+.kb-bz::before,
+.kb-bz::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 0 solid var(--kb-corner);
+  pointer-events: none;
+  transition: border-color 0.2s ease;
+}
+
+.kb-bz::before {
+  top: -1px;
+  left: -1px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+  border-top-left-radius: 6px;
+}
+
+.kb-bz::after {
+  right: -1px;
+  bottom: -1px;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+  border-bottom-right-radius: 6px;
+}
+
+.kb-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+}
+
+.kb-panel[data-tone='well'] {
+  background: var(--kb-well);
+}
+
+.kb-panel[data-tone='wait'] {
+  background: var(--kb-wait-bg);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+/* --------------------------------------------- интерактивные поверхности */
+
+.kb-tile {
+  transition-property: border-color, background-color, transform;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+}
+
+.kb-tile:hover {
+  border-color: rgba(255, 106, 43, 0.45) !important;
+  background-color: var(--kb-hover) !important;
+  transform: translateY(-2px);
+}
+
+.kb-tile:hover::before,
+.kb-tile:hover::after {
+  border-color: var(--kb-signal);
+}
+
+.kb-tile:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.kb-tile .kb-go {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.kb-tile:hover .kb-go {
+  opacity: 1;
+  transform: none;
+}
+
+.kb-cell {
+  transition: background-color 0.2s ease;
+}
+
+.kb-cell:hover {
+  background-color: #22201c !important;
+}
+
+.kb-cell:active {
+  background-color: #26231f !important;
+}
+
+.kb-row {
+  transition: background-color 0.2s ease;
+}
+
+.kb-row:hover {
+  background-color: var(--kb-row-hover) !important;
+}
+
+.kb-cmd {
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.kb-cmd:hover {
+  border-color: rgba(255, 106, 43, 0.45) !important;
+  background-color: var(--kb-panel-3) !important;
+}
+
+.kb-lnk {
+  transition: color 0.2s ease;
+}
+
+.kb-lnk:hover {
+  color: var(--kb-signal-text) !important;
+}
+
+.kb-day {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.kb-day:hover {
+  background-color: var(--kb-hover) !important;
+}
+
+/* ---------------------------------------------------------------- кнопки */
+
+.kb-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.kb-btn[data-size='sm'] {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 4px;
+}
+
+.kb-btn[data-size='lg'] {
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.kb-btn[aria-disabled='true'],
+.kb-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.kb-pri {
+  background: var(--kb-signal);
+  border-color: var(--kb-signal);
+  color: var(--kb-bg) !important;
+  font-weight: 600;
+  transition: transform 0.15s ease-out, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.kb-pri:hover {
+  background-color: var(--kb-signal-hover);
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.18);
+}
+
+.kb-pri:active {
+  transform: scale(0.96);
+}
+
+.kb-ghost {
+  background: transparent;
+  border-color: var(--kb-line-strong);
+  color: var(--kb-text);
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease-out;
+}
+
+.kb-ghost:hover {
+  color: var(--kb-signal-text) !important;
+  border-color: rgba(255, 106, 43, 0.5) !important;
+}
+
+.kb-ghost:active {
+  transform: scale(0.97);
+}
+
+.kb-out {
+  background: transparent;
+  border-color: rgba(255, 106, 43, 0.55);
+  color: var(--kb-signal-text);
+  transition: transform 0.15s ease-out, background-color 0.2s ease;
+}
+
+.kb-out:hover {
+  background-color: rgba(255, 106, 43, 0.12);
+}
+
+.kb-out:active {
+  transform: scale(0.97);
+}
+
+.kb-ib {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 6px;
+  color: var(--kb-text);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.kb-ib[data-size='sm'] {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+}
+
+.kb-ib[data-quiet] {
+  border-color: transparent;
+  color: var(--kb-mute);
+}
+
+.kb-ib:hover {
+  border-color: rgba(255, 106, 43, 0.5) !important;
+  color: var(--kb-signal-text) !important;
+}
+
+.kb-ib[aria-current='page'] {
+  border-color: rgba(255, 106, 43, 0.5);
+  color: var(--kb-signal-text);
+}
+
+/* Кнопка подтверждения удержанием («Стоп»): заливка растёт, пока держишь. */
+.kb-hold {
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  border-color: var(--kb-line-strong);
+  color: var(--kb-text);
+  transition: border-color 0.2s ease;
+  touch-action: none;
+}
+
+.kb-hold:hover:not(:disabled) {
+  border-color: rgba(255, 106, 43, 0.55);
+}
+
+.kb-hold > * {
+  position: relative;
+}
+
+.kb-hold .kb-hold-fill {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 106, 43, 0.28);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s ease-out;
+}
+
+.kb-hold[data-holding] .kb-hold-fill {
+  transform: scaleX(1);
+  transition: transform var(--kb-hold-ms, 1500ms) linear;
+}
+
+.kb-hold-tag {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--kb-mute);
+}
+
+/* -------------------------------------------------- сегменты и переключатель */
+
+.kb-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 6px;
+}
+
+.kb-seg {
+  min-height: 38px;
+  padding: 0 14px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 13.5px;
+  color: var(--kb-soft);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease-out;
+}
+
+.kb-segmented[data-size='sm'] {
+  padding: 2px;
+  border-radius: 5px;
+  border-color: rgba(255, 236, 210, 0.08);
+}
+
+.kb-segmented[data-size='sm'] .kb-seg {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.kb-seg:hover {
+  color: var(--kb-text);
+}
+
+.kb-seg:active {
+  transform: scale(0.97);
+}
+
+.kb-seg[aria-checked='true'] {
+  background: rgba(255, 106, 43, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 106, 43, 0.45);
+  color: var(--kb-signal-text);
+}
+
+.kb-sw {
+  flex: none;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 2px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kb-sw-state {
+  width: 34px;
+  text-align: right;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--kb-mute);
+}
+
+.kb-sw-track {
+  position: relative;
+  box-sizing: border-box;
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--kb-bg);
+  border: 1px solid rgba(255, 236, 210, 0.18);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.kb-sw-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--kb-dim);
+  transition: transform 0.22s var(--kb-ease-out), background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kb-sw:hover .kb-sw-track {
+  border-color: rgba(255, 106, 43, 0.55);
+}
+
+.kb-sw[aria-checked='true'] .kb-sw-state {
+  color: var(--kb-signal-text);
+}
+
+.kb-sw[aria-checked='true'] .kb-sw-track {
+  background: rgba(255, 106, 43, 0.18);
+  border-color: rgba(255, 106, 43, 0.6);
+}
+
+.kb-sw[aria-checked='true'] .kb-sw-knob {
+  background: var(--kb-signal);
+  box-shadow: 0 0 8px rgba(255, 106, 43, 0.7);
+  transform: translateX(18px);
+}
+
+.kb-sw:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ------------------------------------------------------- чип и клавиша */
+
+.kb-chip {
+  box-sizing: border-box;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--kb-soft);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.kb-chip:hover {
+  border-color: rgba(255, 106, 43, 0.45);
+  color: var(--kb-text);
+}
+
+.kb-chip[aria-pressed='true'],
+.kb-chip[aria-selected='true'] {
+  background: rgba(255, 106, 43, 0.1);
+  border-color: rgba(255, 106, 43, 0.5);
+  color: var(--kb-signal-text);
+}
+
+.kb-chip-n {
+  color: var(--kb-signal);
+}
+
+.kb-kbd {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  line-height: 1;
+  color: var(--kb-soft);
+  border: 1px solid var(--kb-line-strong);
+  border-radius: 3px;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------- статусы формой */
+
+.kb-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  display: inline-block;
+}
+
+.kb-led-run {
+  background: var(--kb-signal);
+  animation: kb-breathe 1.8s ease-in-out infinite;
+}
+
+.kb-led-wait {
+  border-radius: 1px;
+  background: var(--kb-signal);
+  transform: rotate(45deg);
+  animation: kb-flash 1s steps(1, end) infinite;
+}
+
+.kb-led-idle {
+  background: var(--kb-led-idle);
+  box-shadow: inset 0 0 0 1px rgba(255, 236, 210, 0.1);
+}
+
+.kb-led-ok {
+  background: var(--kb-sage);
+  box-shadow: 0 0 8px rgba(156, 196, 154, 0.5);
+}
+
+.kb-led-warn {
+  border-radius: 1px;
+  background: var(--kb-sand);
+  transform: rotate(45deg);
+}
+
+.kb-led-error {
+  border-radius: 1px;
+  background: #e9805e;
+  box-shadow: 0 0 8px rgba(233, 128, 94, 0.55);
+}
+
+.kb-led-cal {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--kb-soft);
+}
+
+@keyframes kb-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 106, 43, 0.55), 0 0 6px rgba(255, 106, 43, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 106, 43, 0), 0 0 12px rgba(255, 106, 43, 0.9);
+  }
+}
+
+@keyframes kb-flash {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+
+.kb-colon {
+  animation: kb-flash 2s steps(1, end) infinite;
+}
+
+/* ---------------------------------------------------- линейка раздела */
+
+.kb-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.kb-ruler-n {
+  font-size: 10px;
+  color: var(--kb-signal);
+  letter-spacing: 0.1em;
+}
+
+.kb-ruler-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-head);
+  white-space: nowrap;
+}
+
+.kb-ruler-scale {
+  flex: 1;
+  min-width: 24px;
+  height: 8px;
+  background:
+    repeating-linear-gradient(90deg, var(--kb-tick) 0 1px, transparent 1px 48px) left bottom / 100% 8px no-repeat,
+    repeating-linear-gradient(90deg, var(--kb-tick-minor) 0 1px, transparent 1px 8px) left bottom / 100% 4px no-repeat;
+}
+
+.kb-ruler-scale[data-minor] {
+  background: repeating-linear-gradient(90deg, var(--kb-tick-minor) 0 1px, transparent 1px 8px) left bottom / 100% 4px no-repeat;
+}
+
+.kb-ruler-meta {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+}
+
+.kb-ruler-link {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: var(--kb-soft) !important;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.kb-heading[data-touch] {
+  min-height: 44px;
+}
+
+.kb-heading[data-touch] .kb-ruler-link {
+  min-height: 44px;
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------------- табло */
+
+.kb-board {
+  display: grid;
+  grid-template-columns: repeat(var(--kb-board-cols, 3), minmax(0, 1fr));
+  gap: 1px;
+  background: var(--kb-line);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.kb-board-cell {
+  box-sizing: border-box;
+  min-height: 112px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--kb-panel);
+  border: none;
+  border-radius: 0;
+  color: var(--kb-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.kb-board-cell[data-tone='wait'] {
+  background: var(--kb-wait-cell);
+}
+
+.kb-board-code {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.kb-board-code > .kb-m {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--kb-soft);
+  white-space: nowrap;
+}
+
+.kb-board-cell[data-tone='wait'] .kb-board-code > .kb-m,
+.kb-board-cell[data-tone='wait'] .kb-board-n {
+  color: var(--kb-signal);
+}
+
+.kb-board-n {
+  font-size: 44px;
+  line-height: 0.9;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-board-label {
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * A narrow cell (1280) folds the caption onto a second line instead of «ближайшее за…».
+ * The numbers stay on one line across the cells: the free height of a row stretched by a
+ * two-line caption goes above the caption, not around the number.
+ */
+.kb-board:not([data-compact]) .kb-board-cell {
+  justify-content: flex-start;
+}
+
+.kb-board:not([data-compact]) .kb-board-label {
+  margin-top: auto;
+  white-space: normal;
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.kb-board[data-compact] .kb-board-cell {
+  min-height: 100px;
+  gap: 8px;
+  padding: 12px 12px 11px;
+}
+
+.kb-board[data-compact] .kb-board-code {
+  gap: 8px;
+}
+
+.kb-board[data-compact] .kb-board-code > .kb-m {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.kb-board[data-compact] .kb-board-n {
+  font-size: 36px;
+}
+
+.kb-board[data-compact] .kb-board-label {
+  font-size: 12px;
+}
+
+/* ------------------------------------------------- стрелочный прибор */
+
+.kb-gauge {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.kb-gauge svg {
+  display: block;
+  width: 100%;
+  max-width: 132px;
+  height: auto;
+  overflow: visible;
+}
+
+.kb-gauge[data-compact] {
+  gap: 3px;
+}
+
+.kb-gauge[data-compact] svg {
+  max-width: 100px;
+}
+
+.kb-gauge-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.kb-gauge-caption {
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+  text-wrap: balance;
+}
+
+.kb-needle {
+  transform-origin: 60px 60px;
+  transform: rotate(var(--kb-deg));
+  animation: kb-sweep 1.4s var(--kb-ease-dial) 0.4s both;
+}
+
+@keyframes kb-sweep {
+  from {
+    transform: rotate(-120deg);
+  }
+}
+
+.kb-arc {
+  animation: kb-arcfill 1.4s var(--kb-ease-dial) 0.4s both;
+}
+
+@keyframes kb-arcfill {
+  from {
+    stroke-dasharray: 0 400;
+  }
+}
+
+/* -------------------------------------------------- полосы и анимации */
+
+.kb-scan {
+  animation: kb-scan 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes kb-scan {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(410%);
+  }
+}
+
+.kb-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.kb-eq i {
+  display: block;
+  width: 2px;
+  height: 100%;
+  background: var(--kb-signal);
+  border-radius: 1px;
+  transform-origin: bottom;
+  animation: kb-eq 1.1s ease-in-out infinite;
+}
+
+.kb-eq i:nth-child(2) {
+  animation-delay: -0.35s;
+}
+
+.kb-eq i:nth-child(3) {
+  animation-delay: -0.7s;
+}
+
+.kb-eq i:nth-child(4) {
+  animation-delay: -0.2s;
+}
+
+@keyframes kb-eq {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes kb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.kb-rise {
+  animation: kb-rise 0.6s var(--kb-ease-out) both;
+}
+
+.kb-d1 {
+  animation-delay: 0.06s;
+}
+
+.kb-d2 {
+  animation-delay: 0.12s;
+}
+
+.kb-d3 {
+  animation-delay: 0.18s;
+}
+
+.kb-d4 {
+  animation-delay: 0.24s;
+}
+
+.kb-d5 {
+  animation-delay: 0.3s;
+}
+
+@keyframes kb-fadein {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.kb-fadein {
+  animation: kb-fadein 0.25s ease-out both;
+}
+
+@keyframes kb-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.kb-pop {
+  animation: kb-pop 0.28s var(--kb-ease-out) both;
+}
+
+/* ------------------------------------------------------------ скелетон */
+
+.kb-sk {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: #211f1b;
+  border-radius: 3px;
+}
+
+.kb-sk::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 236, 210, 0.06), transparent);
+  animation: kb-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes kb-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ------------------------------------------------ плашка «нет связи» */
+
+.kb-netbar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 3px 4px 3px 12px;
+  background: #201b13;
+  border: 1px solid rgba(217, 163, 91, 0.4);
+  border-radius: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.kb-netbar[data-state='back'] {
+  padding-right: 12px;
+  background: #171c16;
+  border-color: rgba(156, 196, 154, 0.35);
+}
+
+.kb-netbar-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.kb-netbar-meta {
+  min-width: 0;
+  font-size: 10.5px;
+  color: var(--kb-sand);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-netbar[data-state='back'] .kb-netbar-meta {
+  color: var(--kb-sage);
+}
+
+/* До следующей попытки — тонкая полоска по нижнему краю плашки. */
+.kb-netbar-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgba(255, 236, 210, 0.06);
+}
+
+.kb-netbar-progress > span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--kb-sand);
+  transition: width 0.25s linear;
+}
+
+.kb-netbar-note {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--kb-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-netbar .kb-btn {
+  flex: none;
+  min-height: 26px;
+  margin-left: auto;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* Телефон: только суть — значок, «Нет связи», попытка, «Сейчас». */
+@media (max-width: 640px) {
+  .kb-netbar-note {
+    display: none;
+  }
+}
+
+/* Чат телефона рисует шапку сам: плашка — полоской во всю ширину над ней. */
+.kb-shell[data-bare] .kb-netbar {
+  border-width: 0 0 1px;
+  border-radius: 0;
+  padding-left: 14px;
+}
+
+/* -------------------------------------------- модальное окно и шторка */
+
+.kb-scrim {
+  position: fixed;
+  inset: 0;
+  /* Pinned to the visible area: an iOS keyboard shrinks it (useVisualViewportFrame). */
+  top: var(--kb-vv-top, 0px);
+  bottom: auto;
+  height: var(--kb-vv-height, 100%);
+  z-index: 70;
+  /* The mock-ups add blur(3px); Chrome mirrors the page into a full-screen
+     backdrop blur over a fixed scroll container, so the scrim stays a plain tint. */
+  background: rgba(13, 12, 10, 0.8);
+  animation: kb-scrimin 0.2s ease-out both;
+}
+
+@keyframes kb-scrimin {
+  from {
+    opacity: 0;
+  }
+}
+
+.kb-modal-frame {
+  position: fixed;
+  inset: 0;
+  /* Pinned to the visible area: an iOS keyboard shrinks it (useVisualViewportFrame). */
+  top: var(--kb-vv-top, 0px);
+  bottom: auto;
+  height: var(--kb-vv-height, 100%);
+  z-index: 71;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  box-sizing: border-box;
+  padding: clamp(16px, 6vh, 64px) 16px 120px;
+  pointer-events: none;
+}
+
+.kb-modal-frame[data-center] {
+  align-items: center;
+}
+
+.kb-modal {
+  pointer-events: auto;
+  width: 100%;
+  max-width: var(--kb-modal-max, 720px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.05) inset, 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.kb-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 20px;
+  border-bottom: 1px solid rgba(255, 236, 210, 0.08);
+}
+
+.kb-modal-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-head);
+}
+
+/* Modal: pinned header, body, pinned footer. On a computer the plate simply grows (the frame
+   scrolls); on a phone only the body scrolls — see the ≤ 640px block below. */
+.kb-modal-top,
+.kb-modal-foot {
+  flex: none;
+}
+
+.kb-modal-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/*
+ * Phone: a sheet over the visible area, not a card hung 6vh + margins down a 100vh frame
+ * (on iOS that pushed the top to mid-screen and the «Далее» row under the browser bar).
+ * The frame already follows the visible area (--kb-vv-*, 100dvh without the hook), so the
+ * keyboard shrinks the sheet and the footer rides above the keys.
+ */
+@media (max-width: 640px) {
+  .kb-modal-frame[data-phone] {
+    height: var(--kb-vv-height, 100dvh);
+    padding: 0;
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .kb-modal-frame[data-phone='full'] {
+    align-items: stretch;
+  }
+
+  .kb-modal-frame[data-phone='fit'] {
+    align-items: flex-end;
+    padding-top: max(16px, env(safe-area-inset-top, 0px));
+  }
+
+  .kb-modal-frame[data-phone] > .kb-modal {
+    max-width: none;
+    max-height: 100%;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
+  }
+
+  .kb-modal-frame[data-phone='full'] > .kb-modal {
+    height: 100%;
+    padding-top: env(safe-area-inset-top, 0px);
+    border-width: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: kb-modal-rise 0.28s var(--kb-ease-out) both;
+  }
+
+  .kb-modal-frame[data-phone='fit'] > .kb-modal {
+    border-width: 1px 0 0;
+    border-color: var(--kb-line-strong);
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.55);
+    animation: kb-sheetup 0.38s var(--kb-ease-dial) both;
+  }
+
+  .kb-modal-frame[data-phone] .kb-modal-body {
+    flex: 1 1 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* The home indicator: under the pinned buttons, or under the body when there are none. */
+  .kb-modal-frame[data-phone] .kb-modal-foot,
+  .kb-modal-frame[data-phone] .kb-modal-body:last-child {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .kb-modal-frame[data-phone] .kb-modal-foot {
+    background: var(--kb-modal-foot-bg, var(--kb-panel));
+  }
+
+  /* The keyboard covers the home indicator: no gap between the buttons and the keys. */
+  html[data-kb-keyboard] .kb-modal-frame[data-phone] .kb-modal-foot,
+  html[data-kb-keyboard] .kb-modal-frame[data-phone] .kb-modal-body:last-child {
+    padding-bottom: 0;
+  }
+}
+
+@keyframes kb-modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* An open dialog: the page under it stays put (lockPageScroll), touches on the scrim do not pan it. */
+html[data-kb-scroll-lock] .kb-shell {
+  overflow-y: hidden;
+}
+
+.kb-scrim {
+  touch-action: none;
+}
+
+.kb-sheet-frame {
+  position: fixed;
+  inset: 0;
+  /* Pinned to the visible area: an iOS keyboard shrinks it (useVisualViewportFrame). */
+  top: var(--kb-vv-top, 0px);
+  bottom: auto;
+  height: var(--kb-vv-height, 100%);
+  z-index: 71;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.kb-sheet {
+  pointer-events: auto;
+  position: relative;
+  max-height: 88%;
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-panel);
+  border-top: 1px solid var(--kb-line-strong);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.55);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: kb-sheetup 0.38s var(--kb-ease-dial) both;
+}
+
+@keyframes kb-sheetup {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.kb-sheet-grip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  height: 18px;
+}
+
+.kb-sheet-grip > span {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 236, 210, 0.22);
+}
+
+.kb-sheet-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 8px 16px;
+  border-bottom: 1px solid rgba(255, 236, 210, 0.08);
+}
+
+.kb-sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 16px 20px;
+}
+
+.kb-sheet-foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid rgba(255, 236, 210, 0.08);
+}
+
+/* ------------------------------------------------------- кнопка голоса */
+
+.kb-voice-dock {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kb-voice-hint {
+  font-size: 10.5px;
+  color: var(--kb-soft);
+  border: 1px solid var(--kb-line-strong);
+  border-radius: 4px;
+  padding: 6px 9px;
+  background: var(--kb-bg);
+  white-space: nowrap;
+}
+
+.kb-voice-ringbox {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+}
+
+.kb-voice-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  animation: kb-spin 30s linear infinite;
+}
+
+@keyframes kb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.kb-voice {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: var(--kb-signal);
+  color: var(--kb-bg);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(255, 140, 90, 0.7), 0 10px 36px rgba(255, 106, 43, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  touch-action: none;
+}
+
+.kb-voice:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 1px rgba(255, 160, 120, 0.9), 0 14px 44px rgba(255, 106, 43, 0.45);
+}
+
+.kb-voice:active,
+.kb-voice[data-active] {
+  transform: scale(0.96);
+}
+
+.kb-voice-dock[data-phone] {
+  right: 16px;
+  bottom: calc(76px + 12px + env(safe-area-inset-bottom, 0px));
+  gap: 10px;
+}
+
+/* A phone has no ⌥ Пробел, and the plate would sit over the page: the button speaks for itself. */
+.kb-voice-dock[data-phone] .kb-voice-hint {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .kb-voice-hint {
+    display: none;
+  }
+}
+
+.kb-voice-dock[data-phone] .kb-voice-ringbox {
+  width: 84px;
+  height: 84px;
+}
+
+.kb-voice-dock[data-phone] .kb-voice {
+  width: 64px;
+  height: 64px;
+  box-shadow: 0 0 0 1px rgba(255, 140, 90, 0.7), 0 10px 36px rgba(255, 106, 43, 0.35);
+}
+
+.kb-voice-dock[data-phone] .kb-voice:hover {
+  transform: none;
+  box-shadow: 0 0 0 1px rgba(255, 160, 120, 0.9), 0 14px 44px rgba(255, 106, 43, 0.5);
+}
+
+.kb-voice-dock[data-phone] .kb-voice:active {
+  transform: scale(0.94);
+}
+
+.kb-voice-dock[data-stacked] {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+/* Press-or-hold buttons (usePressOrHold): a long touch neither scrolls, nor opens the
+   iOS callout, nor selects the text around it. */
+.kb-press {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* -------------------------------------------------------------- каркас */
+
+/*
+ * The document never scrolls (index.css clips html/body, as the authors' fixed
+ * shell expects), so the Kabina shell is its own fixed scroll container.
+ */
+.kb-shell {
+  position: fixed;
+  inset: 0;
+  /* Pinned to the visible area: an iOS keyboard shrinks it (useVisualViewportFrame). */
+  top: var(--kb-vv-top, 0px);
+  bottom: auto;
+  height: var(--kb-vv-height, 100%);
+  overflow-y: auto;
+  /* Short and long pages keep the same width: no 15px jump when the scrollbar appears. */
+  scrollbar-gutter: stable;
+  overscroll-behavior-y: contain;
+  box-sizing: border-box;
+  background-color: var(--kb-bg);
+  background-image:
+    radial-gradient(900px 480px at 8% -8%, rgba(255, 106, 43, 0.07), transparent 65%),
+    linear-gradient(rgba(255, 236, 210, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 236, 210, 0.022) 1px, transparent 1px);
+  background-size: auto, 32px 32px, 32px 32px;
+  padding: 24px clamp(16px, 3vw, 40px) 120px;
+}
+
+.kb-shell-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.kb-shell[data-layout='app'] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-image:
+    radial-gradient(900px 480px at 50% -12%, rgba(255, 106, 43, 0.05), transparent 65%),
+    linear-gradient(rgba(255, 236, 210, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 236, 210, 0.02) 1px, transparent 1px);
+  padding: 18px clamp(16px, 2vw, 24px) 20px;
+}
+
+.kb-shell[data-layout='app'] .kb-shell-inner {
+  width: 100%;
+  max-width: 1680px;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 16px;
+}
+
+.kb-shell-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.kb-shell[data-layout='app'] .kb-shell-content {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.kb-shell[data-phone] {
+  background-image:
+    radial-gradient(420px 300px at 0% -4%, rgba(255, 106, 43, 0.08), transparent 65%),
+    linear-gradient(rgba(255, 236, 210, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 236, 210, 0.022) 1px, transparent 1px);
+  /* The page ends above the bottom navigation (76px) and the floating voice button over it (12 + 84px).
+     Top: an iPhone home-screen app (standalone, black-translucent status bar) draws the page under
+     the clock and the Dynamic Island — the inset is 0 in Safari itself. */
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px calc(188px + env(safe-area-inset-bottom, 0px));
+}
+
+/* The strip under the iPhone status bar: what scrolls up passes under it, not under the clock.
+   Zero height wherever there is no inset. */
+.kb-shell[data-phone]::before {
+  content: '';
+  position: fixed;
+  top: var(--kb-vv-top, 0px);
+  left: 0;
+  right: 0;
+  z-index: 34;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--kb-bg);
+  pointer-events: none;
+}
+
+.kb-shell[data-phone] .kb-shell-inner {
+  gap: 20px;
+}
+
+.kb-shell[data-phone][data-layout='app'] {
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 12px;
+}
+
+.kb-shell[data-phone][data-layout='app'] .kb-shell-inner {
+  gap: 10px;
+}
+
+/* Phone chat: the screen draws its own header edge to edge (DarkPhoneChat). */
+.kb-shell[data-bare][data-layout='app'] {
+  padding: env(safe-area-inset-top, 0px) 0 0;
+}
+
+.kb-shell[data-bare] .kb-shell-inner {
+  gap: 0;
+}
+
+/* ------------------------------------------------------------- шапка */
+
+.kb-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--kb-line);
+}
+
+.kb-shell[data-layout='app'] .kb-header {
+  gap: 10px 20px;
+  padding-bottom: 14px;
+}
+
+.kb-header[data-phone] {
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding-bottom: 10px;
+}
+
+.kb-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.kb-crumb-sep {
+  color: var(--kb-sep);
+  font-size: 12px;
+}
+
+.kb-crumb {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 0;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kb-crumb[aria-current='page'] {
+  color: var(--kb-text);
+}
+
+/* Crumbs are links: the hover and the keyboard focus are visible. */
+.kb-crumb-link {
+  margin: 0 -6px;
+  padding: 0 6px;
+  border-radius: 5px;
+  color: var(--kb-soft);
+  text-decoration: none;
+}
+
+.kb-crumb-link[aria-current='page'] {
+  color: var(--kb-text);
+}
+
+.kb-crumb-link:hover {
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 138, 85, 0.45);
+  text-underline-offset: 5px;
+}
+
+.kb-crumb-link:focus-visible,
+.kb-logo:focus-visible {
+  outline: 1px solid rgba(255, 106, 43, 0.7);
+  outline-offset: 2px;
+  border-radius: 5px;
+}
+
+/* Phone «‹» on Files / Settings: back to where the panel was. */
+.kb-header[data-phone] .kb-back {
+  width: 36px;
+  margin-left: -8px;
+  margin-right: -4px;
+  color: var(--kb-soft);
+}
+
+/* «‹», logo, clock and three buttons need ~371px: on a 390 / 375 phone the row ran past the
+   gutter and «Настройки» was cut by the screen edge. The time is in the phone's own status bar. */
+@media (max-width: 402px) {
+  .kb-header[data-phone] .kb-back ~ .kb-clock {
+    display: none;
+  }
+}
+
+/* A step after a project link («Сайт клиента // Чат») is the quieter sub-page (DarkChat). */
+.kb-crumbs .kb-lnk ~ .kb-crumb[aria-current='page'] {
+  font-weight: 400;
+  color: var(--kb-soft);
+}
+
+.kb-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  flex: none;
+}
+
+.kb-logo-word {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+}
+
+.kb-shell[data-layout='app'] .kb-logo-word {
+  font-size: 16px;
+}
+
+.kb-header[data-phone] .kb-logo {
+  gap: 10px;
+}
+
+.kb-header[data-phone] .kb-logo-word {
+  font-size: 15px;
+  letter-spacing: 0.3em;
+}
+
+.kb-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--kb-mute);
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.kb-clock-time {
+  color: var(--kb-text);
+}
+
+.kb-clock[data-compact] {
+  letter-spacing: 0;
+  padding: 5px 8px;
+}
+
+.kb-search-field {
+  box-sizing: border-box;
+  flex: 0 1 460px;
+  min-width: 240px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px 0 14px;
+  background: var(--kb-input);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.kb-shell[data-layout='app'] .kb-search-field {
+  flex-basis: 420px;
+  min-width: 220px;
+}
+
+.kb-search-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--kb-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-tools {
+  display: flex;
+  gap: 8px;
+}
+
+/* -------------------------------------------- нижняя навигация телефона */
+
+.kb-phonenav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 35;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0 6px calc(14px + env(safe-area-inset-bottom, 0px));
+  background: rgba(18, 17, 15, 0.94);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--kb-line-mid);
+}
+
+.kb-nav {
+  position: relative;
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 6px;
+  color: var(--kb-soft) !important;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.kb-nav:hover {
+  color: var(--kb-text) !important;
+}
+
+.kb-nav:active {
+  background-color: var(--kb-row-hover);
+}
+
+.kb-nav[aria-current='page'] {
+  color: var(--kb-signal-text) !important;
+}
+
+.kb-nav-bar {
+  position: absolute;
+  top: -1px;
+  left: 22%;
+  right: 22%;
+  height: 2px;
+  background: transparent;
+}
+
+.kb-nav[aria-current='page'] .kb-nav-bar {
+  background: var(--kb-signal);
+  box-shadow: 0 0 10px rgba(255, 106, 43, 0.7);
+}
+
+.kb-nav-label {
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.kb-nav-badge {
+  position: absolute;
+  top: 8px;
+  left: calc(50% + 8px);
+  min-width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--kb-signal);
+  color: var(--kb-bg);
+  font-size: 9.5px;
+  font-weight: 500;
+}
+
+/* --------------------------------------------- чат авторов в каркасе */
+
+.kb-chat-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 8px;
+}
+
+.kb-shell[data-phone] .kb-chat-host {
+  border-radius: 6px;
+}
+
+/* ------------------------------------------------- экран «скоро» */
+
+.kb-soon {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.kb-soon-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--kb-mute);
+}
+
+.kb-soon-title {
+  margin: 0;
+  font-size: clamp(30px, 3.8vw, 50px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.kb-soon-lead {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-soon-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  padding: 20px;
+}
+
+.kb-soon-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--kb-line);
+}
+
+.kb-soon-list > li > a,
+.kb-soon-list > li > button {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--kb-line-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------- поиск ⌘K */
+
+.kb-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 17px;
+  color: var(--kb-text);
+}
+
+.kb-search-input:focus-visible {
+  outline: none;
+}
+
+.kb-search-group {
+  padding: 12px 10px 4px 20px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--kb-mute);
+}
+
+.kb-search-item {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 16px 6px 20px;
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.kb-search-item[aria-selected='true'] {
+  background: var(--kb-row-hover);
+  border-left-color: var(--kb-signal);
+}
+
+.kb-search-item-icon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 4px;
+  color: var(--kb-soft);
+}
+
+.kb-search-item[aria-selected='true'] .kb-search-item-icon {
+  border-color: rgba(255, 106, 43, 0.5);
+  color: var(--kb-signal);
+}
+
+.kb-search-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 16px 12px 20px;
+  border-top: 1px solid rgba(255, 236, 210, 0.08);
+  font-size: 10.5px;
+  color: var(--kb-mute);
+}
+
+/* ------------------------------------------------------ голос (заглушка) */
+
+.kb-voice-stage {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  display: grid;
+  place-items: center;
+}
+
+.kb-voice-stage .kb-voice {
+  width: 96px;
+  height: 96px;
+}
+
+.kb-voice-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 36px;
+}
+
+.kb-voice-wave i {
+  display: block;
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--kb-signal);
+  transform-origin: center;
+  animation: kb-eq 1.1s ease-in-out infinite;
+}
+
+/* ------------------------------------------- поля, тревоги (DarkLogin, DarkSettings) */
+
+.kb-label {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-stretch: 87.5%;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  color: var(--kb-soft);
+}
+
+.kb-field {
+  box-sizing: border-box;
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 5px;
+  color: var(--kb-text);
+  font-size: 15px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.kb-field[data-size='md'] {
+  height: 44px;
+  font-size: 14px;
+}
+
+.kb-field:hover {
+  border-color: rgba(255, 236, 210, 0.22);
+}
+
+.kb-field:focus,
+.kb-field:focus-visible {
+  outline: none;
+  border-color: rgba(255, 106, 43, 0.65);
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.1);
+  background-color: #141310;
+}
+
+.kb-field[aria-invalid='true'] {
+  border-color: rgba(255, 106, 43, 0.6);
+}
+
+.kb-field:disabled {
+  opacity: 0.6;
+}
+
+.kb-alert {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--kb-wait-cell);
+  border: 1px solid rgba(255, 106, 43, 0.5);
+  border-radius: 5px;
+}
+
+.kb-alert-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--kb-text);
+}
+
+.kb-alert-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-textlink {
+  min-height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: var(--kb-soft);
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s ease;
+}
+
+.kb-textlink:hover {
+  color: var(--kb-signal-text);
+}
+
+.kb-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  margin: 0 -12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.kb-check:hover {
+  background-color: var(--kb-hover);
+}
+
+.kb-check input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  flex: none;
+  accent-color: var(--kb-signal);
+  cursor: pointer;
+}
+
+.kb-command {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+.kb-lamp {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--kb-sage);
+  box-shadow: 0 0 8px rgba(156, 196, 154, 0.55);
+  animation: kb-lampon 0.25s steps(1, end) both;
+}
+
+@keyframes kb-lampon {
+  from {
+    background: var(--kb-led-idle);
+    box-shadow: inset 0 0 0 1px rgba(255, 236, 210, 0.1);
+  }
+}
+
+/* Self-test of the sign-in dials: the needle swings to the stop and settles back. */
+.kb-gauge[data-selftest] .kb-needle {
+  animation: kb-selftest 1.6s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+}
+
+@keyframes kb-selftest {
+  0% {
+    transform: rotate(-120deg);
+  }
+  42% {
+    transform: rotate(120deg);
+  }
+}
+
+.kb-gauge[data-selftest] .kb-arc {
+  animation: kb-arctest 1.6s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+}
+
+@keyframes kb-arctest {
+  0% {
+    stroke-dasharray: 0 252;
+  }
+  42% {
+    stroke-dasharray: 167.6 252;
+  }
+}
+
+.kb-gauge[data-selftest] svg {
+  max-width: 150px;
+}
+
+/* -------------------------------------------------- меньше движения */
+
+@media (prefers-reduced-motion: reduce) {
+  .kb-root *,
+  .kb-root *::before,
+  .kb-root *::after,
+  .kb-portal *,
+  .kb-portal *::before,
+  .kb-portal *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ------------------------------------------- клавиатура и сенсор (приёмка 2) */
+
+/* Paragraphs of every Kabina screen break without a lonely last word. */
+:is(.kb-root, .kb-portal) p {
+  text-wrap: pretty;
+}
+
+/* Keyboard hints (⌘N, ⏎, ↑↓, Tab, Esc, ⌥ Пробел) only where there is a keyboard and a
+   precise pointer; under a thumb they are noise. Mark any hint, keycap or key fragment
+   with .kb-keys; a Kbd keycap hides the same way. */
+:is(.kb-root, .kb-portal) .kb-touch-only {
+  display: none;
+}
+
+@media not all and (hover: hover) and (pointer: fine) {
+  :is(.kb-root, .kb-portal) .kb-keys,
+  :is(.kb-root, .kb-portal) .kb-kbd {
+    display: none !important;
+  }
+
+  /* The touch wording of a hint («удерживай микрофон» instead of «⌥ Пробел»). */
+  :is(.kb-root, .kb-portal) .kb-touch-only {
+    display: revert;
+  }
+}
+
+/* ------------------------------------------- открытая клавиатура телефона */
+
+/* useVisualViewportFrame marks <html> while an on-screen keyboard is up: whatever sits at
+   the bottom of the screen would ride on top of the keys or cover the field being typed in. */
+html[data-kb-keyboard] .kb-phonenav,
+html[data-kb-keyboard] .kb-voice-dock[data-phone] {
+  display: none;
+}
+
+/* The page no longer has to clear the bottom navigation and the voice button. */
+html[data-kb-keyboard] .kb-shell[data-phone][data-layout='page'] {
+  padding-bottom: 24px;
+}
+
+/* ------------------------------------------------- центр уведомлений */
+
+.kb-bell-wrap {
+  position: relative;
+  flex: none;
+}
+
+.kb-bell {
+  position: relative;
+}
+
+.kb-bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  box-sizing: border-box;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--kb-signal);
+  color: var(--kb-bg);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px var(--kb-bg);
+  pointer-events: none;
+}
+
+/* «Нужно твоё решение» не прочитано: колокольчик мягко дышит, ничего не перекрывая. */
+.kb-bell[data-attention] {
+  border-color: rgba(255, 106, 43, 0.55);
+  color: var(--kb-signal-text);
+  animation: kb-bell-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes kb-bell-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 106, 43, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 106, 43, 0.16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kb-bell[data-attention] {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(255, 106, 43, 0.16);
+  }
+}
+
+.kb-notes {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 66;
+  width: min(400px, calc(100vw - 32px));
+  max-height: min(560px, calc(var(--kb-vv-height, 100vh) - 120px));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.05) inset, 0 24px 60px rgba(0, 0, 0, 0.55);
+  outline: none;
+  animation: kb-notes-in 0.22s var(--kb-ease-out) both;
+}
+
+@keyframes kb-notes-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+}
+
+/* Телефон: шторка сверху, в пределах видимой области (клавиатура её не прячет). */
+.kb-notes[data-phone] {
+  position: fixed;
+  top: var(--kb-vv-top, 0px);
+  left: 0;
+  right: 0;
+  z-index: 72;
+  width: auto;
+  max-height: calc(var(--kb-vv-height, 100%) * 0.78);
+  padding-top: env(safe-area-inset-top, 0px);
+  border-width: 0 0 1px;
+  border-radius: 0 0 14px 14px;
+  border-color: var(--kb-line-strong);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  animation: kb-notes-drop 0.32s var(--kb-ease-dial) both;
+}
+
+@keyframes kb-notes-drop {
+  from {
+    transform: translateY(-100%);
+  }
+}
+
+.kb-notes-scrim {
+  z-index: 71;
+}
+
+.kb-notes-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 18px;
+  border-bottom: 1px solid rgba(255, 236, 210, 0.08);
+}
+
+.kb-notes[data-phone] .kb-notes-head {
+  padding: 8px 6px 8px 16px;
+}
+
+.kb-notes-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-head);
+}
+
+.kb-notes-count {
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: var(--kb-signal-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-notes-readall[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.kb-notes-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.kb-note-list {
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.kb-note {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 6px 12px 18px;
+  border-bottom: 1px solid rgba(255, 236, 210, 0.05);
+}
+
+.kb-note:last-child {
+  border-bottom: none;
+}
+
+.kb-note[data-unread] {
+  background: rgba(255, 236, 210, 0.025);
+}
+
+/* Метка непрочитанного — короткая сигнальная черта слева. */
+.kb-note[data-unread]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  width: 3px;
+  height: 18px;
+  border-radius: 0 2px 2px 0;
+  background: var(--kb-signal);
+}
+
+.kb-note[data-kind='wait'][data-unread] {
+  background: rgba(255, 106, 43, 0.06);
+}
+
+.kb-note-icon {
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 106, 43, 0.4);
+  border-radius: 4px;
+  color: var(--kb-signal-text);
+}
+
+.kb-note[data-kind='ok'] .kb-note-icon,
+.kb-note[data-kind='bg'] .kb-note-icon {
+  border-color: rgba(156, 196, 154, 0.4);
+  color: var(--kb-sage);
+}
+
+.kb-note[data-kind='wait'] .kb-note-icon {
+  border-color: rgba(255, 106, 43, 0.55);
+  color: var(--kb-signal);
+  background: rgba(255, 106, 43, 0.08);
+}
+
+.kb-note[data-kind='lost'] .kb-note-icon,
+.kb-note[data-kind='warn'] .kb-note-icon {
+  border-color: rgba(217, 163, 91, 0.45);
+  color: var(--kb-sand);
+}
+
+.kb-note-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kb-note-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 14px;
+}
+
+.kb-note-proj {
+  min-width: 0;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-note-age {
+  margin-left: auto;
+  flex: none;
+  font-size: 10px;
+  color: var(--kb-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-note-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--kb-text);
+  text-wrap: pretty;
+}
+
+.kb-note:not([data-unread]) .kb-note-title {
+  color: var(--kb-soft);
+}
+
+.kb-note-sub {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--kb-soft);
+  overflow-wrap: anywhere;
+}
+
+.kb-note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.kb-note-actions .kb-btn {
+  text-decoration: none;
+}
+
+.kb-note-x {
+  margin-top: -4px;
+}
+
+.kb-note-empty {
+  margin: 0;
+  padding: 28px 22px 30px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+  text-wrap: pretty;
+}
+
+.kb-notes[data-phone] .kb-note {
+  padding: 12px 4px 12px 16px;
+}
+
+.kb-notes[data-phone] .kb-note-actions .kb-btn {
+  min-height: 40px;
+}

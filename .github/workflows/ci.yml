@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --include=dev --no-audit --no-fund
+      - run: npx tsc --noEmit -p tsconfig.json
+      - run: npx tsc --noEmit -p server/tsconfig.json
+      - run: NODE_ENV=test npx vitest run src
+      - run: npm test
+      - run: npm run build

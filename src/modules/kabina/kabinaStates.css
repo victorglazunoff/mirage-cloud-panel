@@ -1,0 +1,1417 @@
+/*
+ * «Кабина» — компоненты состояний из DarkStates.dc.html (волна 2): пустые
+ * состояния, лимиты, большая сессия, ошибки Claude, запрос разрешения,
+ * скелетоны и служебная витрина /states. Токены — из kabina.css (.kb-root).
+ */
+
+/* ---------------------------------------------------------- общие мелочи */
+
+/* Старый src/kabina.css (перекраска) тоже объявляет .kb-led со скруглением 50 % и
+   оказывается в бандле позже — песочный ромб и кирпичный квадрат держим явно. */
+.kb-led.kb-led-warn,
+.kb-led.kb-led-error {
+  border-radius: 1px;
+}
+
+.kb-textlink {
+  min-height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  color: var(--kb-mute);
+  cursor: pointer;
+}
+
+/* «Отклонить», «Остаться здесь», «Сменить модель»: ghost с мягким текстом. */
+.kb-btn.kb-soft-btn {
+  color: var(--kb-soft);
+}
+
+/* ------------------------------------------------- 06 пустые состояния */
+
+.kb-empty {
+  min-height: 300px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px 22px;
+  text-align: center;
+}
+
+.kb-empty[data-compact] {
+  min-height: 0;
+  padding: 24px 16px;
+}
+
+.kb-empty-glyph {
+  box-sizing: border-box;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(255, 236, 210, 0.2);
+  border-radius: 6px;
+  color: var(--kb-soft);
+}
+
+.kb-empty-leds {
+  display: flex;
+  gap: 6px;
+}
+
+.kb-empty-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 30ch;
+}
+
+.kb-empty-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  text-wrap: balance;
+}
+
+.kb-empty-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-empty-action.kb-btn {
+  min-height: 40px;
+  gap: 8px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kb-empty-hint {
+  font-size: 10.5px;
+  color: var(--kb-mute);
+  text-wrap: balance;
+}
+
+/* Load error: the empty-state layout with a sand mark — the first read failed, «Повторить». */
+.kb-loaderror .kb-empty-glyph {
+  color: var(--kb-sand);
+  border-color: rgba(217, 163, 91, 0.42);
+}
+
+.kb-loaderror-code {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--kb-sand);
+}
+
+/* ------------------------------------------------------- 04 лимиты */
+
+.kb-limitwarnings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.kb-limitcard {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #1d1a15;
+  border: 1px solid rgba(217, 163, 91, 0.42);
+  border-radius: 6px;
+}
+
+.kb-limitcard[data-tone='stop'] {
+  background: var(--kb-wait-bg);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kb-limitcard-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.kb-limitcard-dial {
+  display: block;
+  width: 92px;
+  flex: none;
+  height: auto;
+  overflow: visible;
+}
+
+.kb-limitcard-titles {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.kb-limitcard-tagrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-limitcard-tag {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--kb-sand);
+}
+
+.kb-limitcard[data-tone='stop'] .kb-limitcard-tag,
+.kb-limitcard[data-tone='stop'] .kb-limitcard-meta {
+  color: var(--kb-signal-text);
+}
+
+.kb-limitcard-title {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.kb-limitcard-meta {
+  font-size: 11px;
+  line-height: normal;
+  color: var(--kb-sand);
+}
+
+.kb-limitcard-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-limitcard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.kb-limitcard-actions .kb-btn {
+  font-size: 13px;
+}
+
+.kb-limitcard-pri.kb-btn {
+  font-weight: 600;
+}
+
+.kb-limitcard-sec.kb-btn {
+  color: var(--kb-soft);
+}
+
+/* ----------------------------------------------------- L4 большая сессия */
+
+.kb-bigsession {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #1d1a15;
+  border: 1px solid rgba(217, 163, 91, 0.42);
+  border-radius: 6px;
+}
+
+.kb-bigsession-tagrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-bigsession-tag {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--kb-sand);
+}
+
+.kb-bigsession-size {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.kb-bigsession-num {
+  font-size: 44px;
+  line-height: 0.9;
+  font-weight: 500;
+  color: var(--kb-sand);
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-bigsession-unit {
+  font-size: 12px;
+  line-height: normal;
+  color: var(--kb-soft);
+}
+
+.kb-bigsession-scale {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.kb-bigsession-cells {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  padding: 1px;
+  box-sizing: content-box;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 2px;
+}
+
+.kb-bigsession-cells > span:not(.kb-bigsession-mark) {
+  flex: 1;
+  border-radius: 1px;
+  background: rgba(255, 236, 210, 0.05);
+}
+
+.kb-bigsession-cells > span[data-state='under'] {
+  background: rgba(217, 163, 91, 0.45);
+}
+
+.kb-bigsession-cells > span[data-state='over'] {
+  background: var(--kb-sand);
+}
+
+.kb-bigsession-mark {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--kb-text);
+}
+
+.kb-bigsession-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--kb-mute);
+}
+
+.kb-bigsession-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-bigsession-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.kb-bigsession-actions .kb-btn {
+  font-size: 13px;
+}
+
+.kb-bigsession-actions .kb-pri {
+  font-weight: 600;
+}
+
+.kb-bigsession-outcome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  font-size: 11.5px;
+  color: var(--kb-soft);
+}
+
+.kb-bigsession-outcome[data-outcome='new'] {
+  color: var(--kb-sage);
+}
+
+.kb-bigsession-outcome-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------ E1 ошибка API */
+
+.kb-errcard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #1d1a15;
+  border: 1px solid rgba(217, 163, 91, 0.42);
+  border-radius: 6px;
+}
+
+.kb-errcard-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.kb-errcard-title {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.kb-errcard-chip {
+  padding: 3px 7px;
+  border: 1px solid rgba(217, 163, 91, 0.4);
+  border-radius: 3px;
+  font-size: 10.5px;
+  color: var(--kb-sand);
+}
+
+.kb-errcard-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-errcard-sec {
+  color: var(--kb-text);
+}
+
+.kb-errcard-bar {
+  display: block;
+  height: 3px;
+  background: rgba(255, 236, 210, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.kb-errcard-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--kb-sand);
+  transition: width 0.25s linear;
+}
+
+.kb-errcard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-errcard-actions .kb-btn {
+  font-size: 13px;
+}
+
+.kb-errcard-actions .kb-pri {
+  font-weight: 600;
+}
+
+.kb-errcard-toggle.kb-textlink {
+  min-height: 36px;
+  margin-left: auto;
+  padding: 0 4px;
+  font-size: 13px;
+  color: var(--kb-soft);
+}
+
+.kb-errcard-log {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--kb-soft);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* -------------------------------------------------- E2 Bypass под root */
+
+.kb-bypass {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 6px;
+}
+
+.kb-bypass-modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-bypass-label {
+  margin-right: 4px;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+}
+
+.kb-bypass-group {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 2px;
+  background: var(--kb-bg);
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 5px;
+}
+
+.kb-bypass-mode,
+.kb-bypass-locked {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: var(--kb-soft);
+}
+
+button.kb-bypass-mode {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kb-bypass-mode[data-active] {
+  background: rgba(255, 106, 43, 0.14);
+  color: var(--kb-signal-text);
+}
+
+.kb-bypass-locked {
+  gap: 6px;
+  background: transparent;
+  border: 1px dashed rgba(255, 236, 210, 0.22);
+  color: var(--kb-mute);
+  cursor: not-allowed;
+}
+
+.kb-bypass-why {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kb-bypass-title {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.kb-bypass-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-bypass-steps {
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 11.5px;
+  color: var(--kb-soft);
+}
+
+.kb-bypass-steps > li {
+  display: flex;
+  gap: 10px;
+}
+
+.kb-bypass-n {
+  color: var(--kb-signal);
+}
+
+.kb-bypass-code {
+  color: var(--kb-text);
+}
+
+.kb-bypass-foot {
+  font-size: 12px;
+  color: var(--kb-mute);
+}
+
+/* ------------------------------------------------ 03 запрос разрешения */
+
+.kb-perm {
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-wait-bg);
+  border: 1px solid rgba(255, 106, 43, 0.55);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.06);
+}
+
+.kb-perm-stripe {
+  display: block;
+  height: 6px;
+  background: repeating-linear-gradient(135deg, var(--kb-signal) 0 6px, transparent 6px 12px);
+}
+
+.kb-perm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+}
+
+.kb-perm-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.kb-perm-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-signal);
+}
+
+.kb-perm-tool {
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 236, 210, 0.16);
+  border-radius: 3px;
+  font-size: 10.5px;
+  color: var(--kb-text);
+}
+
+.kb-perm-wait {
+  font-size: 10.5px;
+  color: var(--kb-soft);
+}
+
+.kb-perm-reason {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.kb-perm-command {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+.kb-perm-prompt {
+  color: var(--kb-signal);
+}
+
+.kb-perm-cmdtext {
+  white-space: nowrap;
+}
+
+.kb-perm-cmdnote {
+  color: var(--kb-mute);
+}
+
+.kb-perm-diff {
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 4px;
+  font-size: 11.5px;
+  overflow: hidden;
+}
+
+.kb-perm-diffhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--kb-line-soft);
+  color: var(--kb-soft);
+}
+
+.kb-perm-file {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-perm-plus {
+  color: var(--kb-sage);
+}
+
+.kb-perm-minus {
+  color: var(--kb-signal-text);
+}
+
+.kb-perm-lines {
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.kb-perm-line {
+  display: flex;
+  min-width: max-content;
+  line-height: 1.75;
+}
+
+.kb-perm-line[data-kind='add'] {
+  background: rgba(156, 196, 154, 0.08);
+}
+
+.kb-perm-line[data-kind='del'] {
+  background: rgba(255, 106, 43, 0.08);
+}
+
+.kb-perm-n {
+  box-sizing: content-box;
+  width: 34px;
+  flex: none;
+  padding-right: 8px;
+  text-align: right;
+  color: var(--kb-mute);
+}
+
+.kb-perm-sign {
+  width: 16px;
+  flex: none;
+  color: var(--kb-mute);
+}
+
+.kb-perm-line[data-kind='add'] .kb-perm-sign {
+  color: var(--kb-sage);
+}
+
+.kb-perm-line[data-kind='del'] .kb-perm-sign {
+  color: var(--kb-signal-text);
+}
+
+.kb-perm-code {
+  padding-right: 14px;
+  white-space: pre;
+  color: var(--kb-soft);
+}
+
+.kb-perm-line[data-kind='add'] .kb-perm-code {
+  color: #c9dec7;
+}
+
+.kb-perm-line[data-kind='del'] .kb-perm-code {
+  color: #f2b9a0;
+}
+
+.kb-perm-emptydiff {
+  padding: 0 12px;
+  color: var(--kb-mute);
+}
+
+.kb-perm-fold {
+  min-height: 32px;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--kb-line-soft);
+  font-size: 11px;
+  text-align: left;
+  color: var(--kb-mute);
+  cursor: pointer;
+}
+
+.kb-perm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kb-perm-btn.kb-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+/* DarkChat: the plate in the chat feed is a size larger than the DarkStates sample. */
+.kb-perm[data-variant='chat'] {
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.06);
+}
+
+.kb-perm[data-variant='chat'] .kb-perm-body {
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.kb-perm[data-variant='chat'] .kb-perm-reason {
+  font-size: 15px;
+}
+
+.kb-perm[data-variant='chat'] .kb-perm-command {
+  font-size: 12px;
+}
+
+.kb-perm[data-variant='chat'] .kb-perm-btn.kb-btn {
+  padding: 0 18px;
+}
+
+/* DarkPhoneChat: wait time pushed right, «Разрешить один раз» full width, the other two share a row. */
+.kb-perm-push {
+  flex: 1 1 0;
+}
+
+.kb-perm-actions[data-stacked] {
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+.kb-perm-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.kb-perm-actions-row > .kb-btn {
+  flex: 1 1 0;
+}
+
+.kb-perm-btn.kb-pri {
+  font-weight: 600;
+}
+
+.kb-perm-done {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kb-perm-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 5px;
+  font-size: 11.5px;
+  color: var(--kb-sage);
+}
+
+.kb-perm-result > svg {
+  flex: none;
+}
+
+.kb-perm-result[data-denied] {
+  color: var(--kb-soft);
+}
+
+.kb-perm-again {
+  align-self: flex-start;
+}
+
+/* --------------------------------------------------------- 07 скелетоны */
+
+.kb-sk-staggered::after {
+  animation-delay: var(--kb-sk-delay, 0s);
+}
+
+.kb-skfeed {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.kb-skfeed-user {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+}
+
+.kb-skfeed-reply {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kb-skfeed-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-skfeed-caption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--kb-mute);
+}
+
+.kb-skfeed-scan {
+  position: relative;
+  width: 56px;
+  height: 3px;
+  flex: none;
+  background: rgba(255, 236, 210, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.kb-skfeed-scan > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 28%;
+  background: var(--kb-signal);
+}
+
+.kb-sklist {
+  display: flex;
+  flex-direction: column;
+}
+
+.kb-sklist-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+
+.kb-sklist-title {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--kb-head);
+}
+
+.kb-sklist-scale {
+  flex: 1;
+  height: 6px;
+  background: repeating-linear-gradient(90deg, rgba(255, 236, 210, 0.12) 0 1px, transparent 1px 8px) left bottom / 100% 4px no-repeat;
+}
+
+.kb-sklist-rows {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--kb-line);
+}
+
+.kb-sklist-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.kb-sklist-bars {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* ------------------------------------------- запись T3 «нужно твоё решение» */
+
+/* Ромб в значке записи мигает мягко и не гаснет до тёмного. */
+.kb-note[data-kind='wait'] .kb-note-icon .kb-led-wait {
+  width: 10px;
+  height: 10px;
+  animation: kb-note-wait 1.2s steps(1, end) infinite;
+}
+
+@keyframes kb-note-wait {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ----------------------------------------------- карточки L1–L3: кнопки в строку */
+
+.kb-limitcard-actions .kb-btn {
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+@media (min-width: 601px) {
+  .kb-limitcard-actions {
+    flex-wrap: nowrap;
+  }
+}
+
+/* ------------------------------------------------- витрина /states */
+
+.kb-states {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.kb-states-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px 48px;
+}
+
+.kb-states-intro-copy {
+  flex: 1 1 520px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kb-states-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--kb-mute);
+}
+
+.kb-states-h1 {
+  margin: 0;
+  font-size: clamp(32px, 3.8vw, 50px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.kb-states-lead {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-states-legend {
+  flex: 1 1 460px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kb-states-legend-title {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--kb-mute);
+}
+
+.kb-states-legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  background: rgba(255, 236, 210, 0.08);
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.kb-states-legend li {
+  flex: 1 1 190px;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  background: var(--kb-panel);
+  font-size: 13px;
+  color: var(--kb-soft);
+}
+
+.kb-states-legend li > b {
+  font-weight: 400;
+  color: var(--kb-text);
+}
+
+.kb-states-legend li > span:last-child {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-states-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kb-states-toc .kb-chip {
+  text-decoration: none;
+}
+
+.kb-states-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-margin-top: 24px;
+}
+
+.kb-states-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* L1–L4: карточки ряда делят строки сетки (subgrid) — подписи «L1 … L4» стоят на одной высоте,
+   даже когда у одной сцены кнопки выше или заголовок в две строки. */
+.kb-states-grid[data-aligned] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.kb-states-grid[data-aligned] > .kb-spec {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+}
+
+/* Карточка спецификации: сцена на мелкой сетке + подвал «КОГДА». */
+.kb-spec {
+  flex: 1 1 380px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+}
+
+.kb-spec-stage {
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 20px;
+  border-radius: 6px 6px 0 0;
+  background-image:
+    linear-gradient(rgba(255, 236, 210, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 236, 210, 0.03) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.kb-spec-stage[data-center] {
+  min-height: 168px;
+  align-items: center;
+}
+
+.kb-spec-stage[data-end] {
+  justify-content: flex-end;
+}
+
+.kb-spec-stage[data-pad='20'] {
+  padding: 20px;
+}
+
+.kb-spec-notes {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kb-spec-notes-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 8px 8px 14px;
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  background: var(--kb-bg);
+}
+
+.kb-spec-notes-cap {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+/* В витрине список стоит в потоке, а не выпадает из шапки. */
+.kb-spec-notes-panel.kb-notes {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
+  max-height: 520px;
+  animation: none;
+}
+
+.kb-spec-kinds {
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.kb-spec-kinds dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.kb-spec-kinds dt .kb-spec-hide {
+  margin-left: auto;
+}
+
+.kb-spec-kinds dd {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-spec-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid rgba(255, 236, 210, 0.08);
+  background: var(--kb-panel);
+  border-radius: 0 0 6px 6px;
+}
+
+.kb-spec-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.kb-spec-code {
+  font-size: 10px;
+  color: var(--kb-signal);
+  letter-spacing: 0.1em;
+}
+
+.kb-spec-titlebar[data-wrap] {
+  flex-wrap: wrap;
+}
+
+.kb-spec-name {
+  margin: 0;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.kb-spec-hide {
+  flex: none;
+  font-size: 10px;
+  color: var(--kb-soft);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 3px;
+  padding: 3px 6px;
+}
+
+.kb-spec-when {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-spec-when > span {
+  margin-right: 6px;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+/* C2 «остановлено» — разделитель в ленте и действия под ним. */
+.kb-stopped {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kb-stopped-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-stopped-text code {
+  font-family: 'Martian Mono', ui-monospace, monospace;
+  font-stretch: 87.5%;
+  font-size: 12px;
+  color: var(--kb-text);
+}
+
+.kb-stopped-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kb-stopped-resumed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--kb-signal-text);
+}
+
+.kb-stopped-resumed .kb-textlink {
+  margin-left: auto;
+}
+
+/* Claude-реплика над отметкой (витрина C2). */
+.kb-claude-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kb-claude-line > b {
+  font-weight: 400;
+  color: var(--kb-signal);
+}
+
+.kb-stopmark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kb-stopmark > i {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 236, 210, 0.16);
+}
+
+.kb-stopmark > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 236, 210, 0.18);
+  border-radius: 3px;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--kb-text);
+}
+
+.kb-stopmark > span::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--kb-text);
+}
+
+.kb-states-composer {
+  display: flex;
+  flex-direction: column;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgba(255, 236, 210, 0.04) inset, 0 14px 36px rgba(0, 0, 0, 0.4);
+}
+
+.kb-states-composer textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: none;
+  padding: 14px 16px 6px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--kb-text);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.kb-states-composer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 8px 16px;
+}
+
+.kb-states-composer-bar > span:first-child {
+  font-size: 12px;
+  color: var(--kb-mute);
+  text-wrap: pretty;
+}
+
+.kb-states-send.kb-btn {
+  min-height: 44px;
+  gap: 10px;
+  padding: 0 12px 0 18px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kb-states-send[data-queued] {
+  background: var(--kb-sand);
+}
+
+.kb-states-send .kb-kbd {
+  border: none;
+  background: rgba(18, 17, 15, 0.14);
+  color: inherit;
+}
+
+@media (max-width: 720px) {
+  .kb-spec {
+    flex-basis: 100%;
+  }
+}

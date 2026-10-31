@@ -1,0 +1,1030 @@
+/*
+ * Экран настроек «Кабины».
+ * Значения — из макета.
+ */
+
+.kb-set {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px 40px;
+  align-items: flex-start;
+}
+
+.kb-set-aside {
+  flex: 1 1 272px;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 861px) {
+  .kb-set-aside {
+    position: sticky;
+    top: 0;
+    max-width: 320px;
+  }
+}
+
+/* После первого раздела следующие показываются сразу: без задержки и подъёма kb-rise. */
+.kb-set[data-switched] .kb-set-main .kb-rise {
+  animation: kb-set-swap 140ms ease-out both;
+  animation-delay: 0s;
+}
+
+@keyframes kb-set-swap {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Подсветка раздела меняется сразу, без перехода фона. */
+.kb-set-navitem[aria-current='page'] {
+  transition: none;
+}
+
+/* Классическое окно авторов поверх «Кабины»: плотная подложка без backdrop-blur
+   (размытие давало «копии» страницы за окном). */
+.kb-set-classic .modal-backdrop {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgba(12, 11, 10, 0.88);
+  /* Pinned to the visible area like the Kabina layers (useVisualViewportFrame): `inset-0` is the
+     iOS layout viewport — under the browser bar and the keyboard the dialog's bottom was lost. */
+  top: var(--kb-vv-top, 0px);
+  bottom: auto;
+  height: var(--kb-vv-height, 100dvh);
+  overscroll-behavior: contain;
+}
+
+/* Phone: the dialog is a full-screen sheet — keep it clear of the notch and the home indicator. */
+@media (max-width: 767px) {
+  .kb-set-classic .modal-backdrop {
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
+  }
+}
+
+/* Окно авторов: у содержимого вкладки `pb-safe-area-inset-bottom` обнуляет нижний отступ, а
+   вложенная обёртка по-прежнему уходит вниз на -16px (-24px на md) — нижняя рамка карточки
+   пряталась под прокрутку. Возвращаем отступ под эту обёртку (правка без ядра). */
+.kb-set-classic .settings-content-enter {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .kb-set-classic .settings-content-enter {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Телефон: вкладки провайдеров (Claude / Cursor / Codex / OpenCode) — полными словами, лента
+   листается пальцем, а не «Cl… / Cur…». */
+@media (max-width: 767px) {
+  .kb-set-classic div:has(> button.touch-manipulation.flex-1) {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .kb-set-classic div:has(> button.touch-manipulation.flex-1)::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kb-set-classic button.touch-manipulation.flex-1 {
+    flex: 1 0 auto;
+    min-height: 40px;
+  }
+
+  .kb-set-classic button.touch-manipulation.flex-1 > .truncate {
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+.kb-set-navcap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+}
+
+.kb-set-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kb-set-navitem {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--kb-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.kb-set-navitem:hover {
+  background-color: var(--kb-row-hover);
+}
+
+.kb-set-navitem:hover .kb-set-navname {
+  color: var(--kb-text);
+}
+
+.kb-set-navitem[aria-current='page'] {
+  background: var(--kb-panel);
+  border-color: rgba(255, 236, 210, 0.12);
+}
+
+.kb-set-navnum {
+  width: 18px;
+  flex: none;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--kb-mute);
+}
+
+.kb-set-navitem[aria-current='page'] .kb-set-navnum {
+  color: var(--kb-signal);
+}
+
+.kb-set-navicon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 4px;
+  color: var(--kb-soft);
+}
+
+.kb-set-navitem[aria-current='page'] .kb-set-navicon {
+  border-color: rgba(255, 106, 43, 0.45);
+  color: var(--kb-signal-text);
+}
+
+.kb-set-navname {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--kb-soft);
+}
+
+.kb-set-navitem[aria-current='page'] .kb-set-navname {
+  color: var(--kb-text);
+}
+
+.kb-set-navmeta {
+  font-size: 10px;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-set-navfoot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 12px 0;
+  margin-top: 4px;
+  border-top: 1px solid var(--kb-line-soft);
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+}
+
+.kb-set-main {
+  flex: 999 1 640px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.kb-set-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--kb-line-soft);
+}
+
+.kb-set-title {
+  margin: 0;
+  font-size: clamp(30px, 3.4vw, 46px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+}
+
+.kb-set-lead {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-set-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 236, 210, 0.08);
+  border-radius: 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--kb-mute);
+  background: transparent;
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.kb-set-saved[data-state='fresh'] {
+  color: var(--kb-text);
+  border-color: rgba(156, 196, 154, 0.4);
+}
+
+.kb-set-saved[data-state='error'] {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.5);
+  cursor: pointer;
+}
+
+.kb-set-group {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.kb-set-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kb-set-plate {
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+}
+
+.kb-set-plate[data-clip] {
+  overflow: hidden;
+}
+
+.kb-set-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+  padding: 16px 18px;
+  transition: background-color 0.2s ease;
+}
+
+.kb-set-row + .kb-set-row,
+.kb-set-row + .kb-set-sub,
+.kb-set-sub + .kb-set-row,
+.kb-set-sub + .kb-set-sub {
+  border-top: 1px solid var(--kb-line-soft);
+}
+
+.kb-set-row[data-hover]:hover {
+  background-color: var(--kb-panel-3);
+}
+
+.kb-set-row[data-tight] {
+  flex-wrap: nowrap;
+  gap: 18px;
+  padding: 14px 18px;
+}
+
+.kb-set-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.kb-set-text {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kb-set-row[data-tight] .kb-set-text {
+  flex: 1;
+}
+
+/* In a column block the text keeps its own height (flex-basis would become a height). */
+.kb-set-sub > .kb-set-text {
+  flex: none;
+}
+
+.kb-set-name {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.kb-set-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kb-soft);
+  text-wrap: pretty;
+}
+
+.kb-set-hint {
+  font-size: 13px;
+  color: var(--kb-mute);
+}
+
+.kb-set-tag {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.kb-set-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.kb-set-card {
+  flex: 1 1 260px;
+  min-height: 84px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--kb-well);
+  border: 1px solid var(--kb-line);
+  border-radius: 6px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--kb-text);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.kb-set-card:hover {
+  border-color: rgba(255, 106, 43, 0.4);
+}
+
+.kb-set-card[aria-checked='true'] {
+  background: rgba(255, 106, 43, 0.06);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kb-set-radio {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 1px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--kb-dim);
+  border-radius: 50%;
+}
+
+.kb-set-radio > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+[aria-checked='true'] > .kb-set-radio,
+[aria-checked='true'] .kb-set-radio {
+  border-color: var(--kb-signal);
+}
+
+[aria-checked='true'] > .kb-set-radio > span,
+[aria-checked='true'] .kb-set-radio > span {
+  background: var(--kb-signal);
+}
+
+.kb-set-iconbtn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 4px;
+  color: var(--kb-soft);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.kb-set-iconbtn:hover {
+  color: var(--kb-signal-text);
+  border-color: rgba(255, 106, 43, 0.5);
+}
+
+.kb-set-iconbtn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.kb-danger:hover {
+  color: var(--kb-signal-text) !important;
+  border-color: rgba(255, 106, 43, 0.5) !important;
+}
+
+.kb-set-keycap {
+  min-width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  background: var(--kb-bg);
+  border: 1px solid rgba(255, 236, 210, 0.18);
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  font-size: 16px;
+  color: var(--kb-text);
+}
+
+.kb-set-mono-badge {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--kb-line-btn);
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--kb-mute);
+}
+
+/* Канал включён — плитка оранжевая, как у включённого плагина. */
+.kb-set-mono-badge[data-on] {
+  color: #ff8a55;
+  border-color: rgba(255, 106, 43, 0.45);
+}
+
+/* Строка канала (04.1): ~93px, как в макете. */
+.kb-set-row.kb-set-channel {
+  flex-wrap: nowrap;
+  gap: 14px;
+  min-height: 92px;
+  padding: 16px 18px;
+}
+
+.kb-set-channel-action {
+  flex: none;
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 13.5px;
+}
+
+.kb-set-channel-action[aria-pressed='true'] {
+  color: var(--kb-mute);
+}
+
+/* Телефон: кнопка канала («Подключить», «Разрешить») уходит на свою строку и не теснит подпись. */
+@media (max-width: 480px) {
+  .kb-set-row.kb-set-channel {
+    flex-wrap: wrap;
+    padding: 14px 18px;
+  }
+
+  .kb-set-channel > div {
+    flex: 1 1 0;
+  }
+
+  .kb-set-channel .kb-set-channel-action {
+    order: 3;
+    width: 100%;
+  }
+}
+
+/* Подпись со статус-точкой: точка стоит по первой строке, когда текст переносится (телефон). */
+.kb-set-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+.kb-set-status > .kb-led {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  margin-top: 6px;
+  box-shadow: none;
+}
+
+.kb-set-widget[data-dragging] {
+  opacity: 0.5;
+}
+
+.kb-set-widget[data-drop] {
+  box-shadow: inset 0 2px 0 var(--kb-signal);
+}
+
+.kb-set-grip {
+  width: 28px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--kb-dim);
+  cursor: grab;
+}
+
+.kb-set-grip:active {
+  cursor: grabbing;
+}
+
+.kb-set-field {
+  height: 44px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line-strong);
+  border-radius: 5px;
+  color: var(--kb-text);
+  font-family: 'Golos Text', sans-serif;
+  font-size: 15px;
+  letter-spacing: 0;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kb-set-field:focus {
+  border-color: rgba(255, 106, 43, 0.55);
+  box-shadow: 0 0 0 4px rgba(255, 106, 43, 0.08);
+}
+
+.kb-set-field[aria-invalid='true'] {
+  border-color: rgba(255, 106, 43, 0.6);
+}
+
+.kb-set-fieldlabel {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+/* 04.2 «Тихие часы»: «с [23:00] до [08:00]» and the switch. */
+.kb-set-quiet {
+  flex: 0 1 auto;
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 14px;
+}
+
+.kb-set-quiet-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-set-quiet-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--kb-mute);
+}
+
+.kb-set-quiet-input {
+  width: 76px;
+  height: 40px;
+  padding: 0 10px;
+  font-size: 14px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-set-theme {
+  flex: 1 1 300px;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: var(--kb-panel);
+  border: 1px solid var(--kb-line-mid);
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: left;
+  cursor: pointer;
+  color: var(--kb-text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kb-set-theme:hover {
+  border-color: rgba(255, 106, 43, 0.4);
+}
+
+.kb-set-theme[aria-checked='true'] {
+  border-color: rgba(255, 106, 43, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 106, 43, 0.1);
+}
+
+.kb-set-qr {
+  width: 176px;
+  height: 176px;
+  flex: none;
+  padding: 10px;
+  box-sizing: border-box;
+  background: #ede6da;
+  border-radius: 6px;
+}
+
+.kb-set-codes {
+  max-width: 520px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 18px;
+  margin: 0;
+  padding: 14px 16px;
+  list-style: none;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-line);
+  border-radius: 5px;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+/* Телефон: сегменты (режим прав, Effort, модель) — одной строкой; не влезли — листаются пальцем. */
+@media (max-width: 600px) {
+  .kb-set-main .kb-segmented {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .kb-set-main .kb-segmented::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kb-set-main .kb-segmented .kb-seg {
+    flex: none;
+    white-space: nowrap;
+    padding: 0 11px;
+    /* minItemWidth ставится инлайном — на телефоне подписи важнее ровной ширины. */
+    min-width: 0 !important;
+  }
+}
+
+/* Phone and narrow windows: sections become a scrolling strip of chips. */
+@media (max-width: 860px) {
+  /* Quiet hours wrap under the text: the switch keeps the right edge of the rows above. */
+  .kb-set-quiet {
+    flex: 1 1 100%;
+  }
+
+  .kb-set-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 0 16px 4px;
+    gap: 6px;
+  }
+
+  .kb-set-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kb-set-navitem {
+    flex: none;
+    min-height: 44px;
+    padding: 0 14px;
+  }
+
+  .kb-set-navmeta,
+  .kb-set-navcap,
+  .kb-set-navfoot {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------- активные входы (05.4) */
+
+.kb-set-row.kb-set-sess {
+  flex-wrap: nowrap;
+  gap: 14px;
+  min-height: 80px;
+  padding: 14px 18px;
+}
+
+.kb-set-sess-icon {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 236, 210, 0.12);
+  border-radius: 4px;
+  color: var(--kb-soft);
+}
+
+.kb-set-sess-icon[data-current] {
+  border-color: rgba(156, 196, 154, 0.45);
+  color: #9cc49a;
+}
+
+.kb-set-sess-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kb-set-sess-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.kb-set-sess-meta {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-set-sess-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kb-set-here {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: #9cc49a;
+  white-space: nowrap;
+}
+
+.kb-set-here > .kb-led {
+  width: 6px;
+  height: 6px;
+  box-shadow: none;
+}
+
+.kb-set-here[data-inline] {
+  display: none;
+}
+
+/* Подзаголовок «Скрипты и программы» внутри плашки входов. */
+.kb-set-sessgroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 14px 18px 10px;
+  border-top: 1px solid var(--kb-line-soft);
+  background: rgba(255, 236, 210, 0.015);
+}
+
+.kb-set-sessgroup > .kb-m {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--kb-mute);
+}
+
+.kb-set-sessgroup-note {
+  font-size: 12.5px;
+  color: var(--kb-mute);
+}
+
+.kb-set-sessgroup + .kb-set-row {
+  border-top: none;
+}
+
+.kb-set-row.kb-set-sessmore {
+  justify-content: flex-start;
+  padding: 10px 18px;
+}
+
+.kb-set-sessmore .kb-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 13.5px;
+  border-color: var(--kb-line-btn);
+}
+
+/* ---------------------------------------------------------- виджеты главного (03.1) */
+
+.kb-set-row.kb-set-widget {
+  display: grid;
+  grid-template-columns: 28px 20px minmax(0, 1fr) auto auto;
+  grid-template-areas: 'grip num text arrows toggle';
+  align-items: center;
+  gap: 0 12px;
+  min-height: 80px;
+  padding: 12px 14px 12px 8px;
+}
+
+.kb-set-widget > .kb-set-grip {
+  grid-area: grip;
+}
+
+.kb-set-widget-num {
+  grid-area: num;
+  font-size: 10px;
+  color: var(--kb-mute);
+}
+
+.kb-set-widget[data-on] .kb-set-widget-num {
+  color: var(--kb-signal);
+}
+
+.kb-set-widget-text {
+  grid-area: text;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kb-set-widget-name {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--kb-mute);
+}
+
+.kb-set-widget[data-on] .kb-set-widget-name {
+  color: var(--kb-text);
+}
+
+.kb-set-widget-desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--kb-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-set-widget[data-on] .kb-set-widget-desc {
+  color: var(--kb-soft);
+}
+
+.kb-set-widget-arrows {
+  grid-area: arrows;
+  display: flex;
+  gap: 2px;
+}
+
+.kb-set-widget > .kb-sw {
+  grid-area: toggle;
+}
+
+/* Темы (07.1): две карточки делят ширину раздела. */
+.kb-set-themes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.kb-set-themes > .kb-set-theme {
+  max-width: none;
+}
+
+@media (max-width: 600px) {
+  /* Правая часть линейки («Выйти везде, кроме этого», путь плагинов) уходит под неё строкой во всю ширину. */
+  .kb-set-block > .kb-heading {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  .kb-set-block > .kb-heading > .kb-ruler-scale ~ * {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .kb-set-block > .kb-heading > .kb-btn {
+    min-height: 44px;
+    font-size: 13.5px;
+  }
+
+  .kb-set-block > .kb-heading > .kb-ruler-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Режим прав: пять вариантов сеткой в две строки — Bypass и «Принимать правки» видны целиком. */
+  .kb-set-modes {
+    width: 100%;
+  }
+
+  .kb-set-main .kb-set-modes .kb-segmented {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+  }
+
+  .kb-set-main .kb-set-modes .kb-segmented .kb-seg {
+    min-height: 44px;
+    padding: 0 8px;
+    justify-content: center;
+  }
+
+  .kb-set-modes .kb-seg:nth-child(4) {
+    grid-column: span 2;
+  }
+
+  /* Входы: «это устройство» встаёт под название, подпись переносится, а не режется. */
+  .kb-set-here[data-inline] {
+    display: inline-flex;
+  }
+
+  .kb-set-here[data-side] {
+    display: none;
+  }
+
+  .kb-set-sess-meta {
+    white-space: normal;
+  }
+
+  .kb-set-row.kb-set-sess {
+    min-height: 0;
+  }
+
+  /* Виджеты главного: две строки — название и переключатель, ниже описание целиком и стрелки. */
+  .kb-set-row.kb-set-widget {
+    grid-template-columns: 28px 20px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'grip num name toggle'
+      'grip . desc arrows';
+    gap: 2px 10px;
+    min-height: 0;
+    padding: 12px 14px 12px 6px;
+  }
+
+  /* Переключатель ловит палец на 44px, но строку названия по высоте не раздувает. */
+  .kb-set-widget > .kb-sw {
+    margin: -9px 0;
+  }
+
+  .kb-set-widget-text {
+    display: contents;
+  }
+
+  .kb-set-widget-name {
+    grid-area: name;
+  }
+
+  .kb-set-widget-desc {
+    grid-area: desc;
+    align-self: start;
+    white-space: normal;
+    text-wrap: pretty;
+  }
+
+  .kb-set-widget-arrows {
+    align-self: start;
+  }
+}
